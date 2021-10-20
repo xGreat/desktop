@@ -544,6 +544,11 @@ void SyncEngine::startSync()
     _discoveryPhase.reset(new DiscoveryPhase);
     _discoveryPhase->_account = _account;
     _discoveryPhase->_excludes = _excludedFiles.data();
+    const QString excludeFilePath = _localPath + QStringLiteral(".sync-exclude.lst");
+    if (QFile::exists(excludeFilePath)) {
+        _discoveryPhase->_excludes->addExcludeFilePath(excludeFilePath);
+        _discoveryPhase->_excludes->reloadExcludeFiles();
+    }
     _discoveryPhase->_statedb = _journal;
     _discoveryPhase->_localDir = _localPath;
     if (!_discoveryPhase->_localDir.endsWith('/'))
@@ -1028,7 +1033,7 @@ void SyncEngine::abort()
         disconnect(_discoveryPhase.data(), nullptr, this, nullptr);
         _discoveryPhase.take()->deleteLater();
 
-        Q_EMIT syncError(tr("Aborted"));
+        Q_EMIT syncError(tr("Synchronization will resume shortly."));
         finalize(false);
     }
 }

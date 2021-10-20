@@ -22,7 +22,14 @@ Window {
     flags:      Systray.useNormalWindow ? Qt.Window : Qt.Dialog | Qt.FramelessWindowHint
 
 
+    property var fileActivityDialogAbsolutePath: ""
     readonly property int maxMenuHeight: Style.trayWindowHeight - Style.trayWindowHeaderHeight - 2 * Style.trayWindowBorderWidth
+
+    function openFileActivityDialog(displayPath, absolutePath) {
+        fileActivityDialogLoader.displayPath = displayPath
+        fileActivityDialogLoader.absolutePath = absolutePath
+        fileActivityDialogLoader.refresh()
+    }
 
     Component.onCompleted: Systray.forceWindowInit(trayWindow)
 
@@ -43,12 +50,14 @@ Window {
         // see also id:accountMenu below
         userLineInstantiator.active = false;
         userLineInstantiator.active = true;
+        syncStatus.model.load();
     }
 
     Connections {
         target: UserModel
         function onNewUserSelected() {
             accountMenu.close();
+            syncStatus.model.load();
         }
     }
 
@@ -69,6 +78,10 @@ Window {
         function onHideWindow() {
             trayWindow.hide();
             Systray.setClosed();
+        }
+
+        function onShowFileActivityDialog(displayPath, absolutePath) {
+            openFileActivityDialog(displayPath, absolutePath)
         }
     }
 
@@ -553,31 +566,48 @@ Window {
             }
         }   // Rectangle trayWindowHeaderBackground
 
-        ListView {
-            id: activityListView
+        SyncStatus {
+            id: syncStatus
+
             anchors.top: trayWindowHeaderBackground.bottom
             anchors.left: trayWindowBackground.left
             anchors.right: trayWindowBackground.right
+        }
+
+        ActivityList {
+            anchors.top: syncStatus.bottom
+            anchors.left: trayWindowBackground.left
+            anchors.right: trayWindowBackground.right
             anchors.bottom: trayWindowBackground.bottom
-            clip: true
-            ScrollBar.vertical: ScrollBar {
-                id: listViewScrollbar
-            }
-
-            readonly property int maxActionButtons: 2
-
-            keyNavigationEnabled: true
-
-            Accessible.role: Accessible.List
-            Accessible.name: qsTr("Activity list")
-
+           
             model: activityModel
-
-            delegate: ActivityItem {  
-                width: activityListView.width
-                height: Style.trayWindowHeaderHeight
-                onClicked: activityModel.triggerDefaultAction(model.index)
+            onShowFileActivity: {
+                openFileActivityDialog(displayPath, absolutePath)
+            }
+            onActivityItemClicked: {
+                model.triggerDefaultAction(index)
             }
         }
-    }       // Rectangle trayWindowBackground
+
+        Loader {
+            id: fileActivityDialogLoader
+
+            property string displayPath: ""
+            property string absolutePath: ""
+
+            function refresh() {
+                active = true
+                item.model.load(activityModel.accountState, absolutePath)
+                item.show()            
+            }
+
+            active: false
+            sourceComponent: FileActivityDialog {
+                title: qsTr("%1 - File activity").arg(fileActivityDialogLoader.displayPath)
+                onClosing: fileActivityDialogLoader.active = false
+            }
+
+            onLoaded: refresh()
+        }
+    } // Rectangle trayWindowBackground
 }

@@ -40,6 +40,7 @@ set(client_UI_SRCS
     UserStatusSelectorDialog.qml
     tray/ActivityActionButton.qml
     tray/ActivityItem.qml
+    tray/ActivityList.qml
     tray/Window.qml
     tray/UserLine.qml
     wizard/flow2authwidget.ui
@@ -111,6 +112,8 @@ set(client_SRCS
     remotewipe.cpp
     userstatusselectormodel.cpp
     emojimodel.cpp
+    fileactivitylistmodel.cpp
+    tray/syncstatussummary.cpp
     tray/ActivityData.cpp
     tray/ActivityListModel.cpp
     tray/UserModel.cpp
@@ -329,7 +332,7 @@ add_library(nextcloudCore STATIC ${final_src})
 
 target_link_libraries(nextcloudCore
   PUBLIC
-  nextcloudsync
+  Nextcloud::sync
   Qt5::Widgets
   Qt5::GuiPrivate
   Qt5::Svg
@@ -416,7 +419,7 @@ endif()
 
 IF(BUILD_UPDATER)
     add_library(updater STATIC ${updater_SRCS})
-    target_link_libraries(updater nextcloudsync ${updater_DEPS} Qt5::Widgets Qt5::Svg Qt5::Network Qt5::Xml)
+    target_link_libraries(updater Nextcloud::sync ${updater_DEPS} Qt5::Widgets Qt5::Svg Qt5::Network Qt5::Xml)
     target_include_directories(updater PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
     set_target_properties(updater PROPERTIES AUTOMOC ON)
     target_link_libraries(nextcloudCore PUBLIC updater)
@@ -499,12 +502,12 @@ if(BUILD_OWNCLOUD_OSX_BUNDLE AND NOT BUILD_LIBRARIES_ONLY)
         set(NO_STRIP "")
     endif()
 
-    add_custom_command(TARGET ${APPLICATION_EXECUTABLE} POST_BUILD
+    add_custom_command(TARGET nextcloud POST_BUILD
         COMMAND "${MACDEPLOYQT_EXECUTABLE}"
-        "$<TARGET_FILE_DIR:${APPLICATION_EXECUTABLE}>/../.."
+        "$<TARGET_FILE_DIR:nextcloud>/../.."
         -qmldir=${CMAKE_SOURCE_DIR}/src/gui
         -always-overwrite
-        -executable="$<TARGET_FILE_DIR:${APPLICATION_EXECUTABLE}>/${cmd_NAME}"
+        -executable="$<TARGET_FILE_DIR:nextcloud>/${cmd_NAME}"
         ${NO_STRIP}
         COMMAND "${CMAKE_COMMAND}"
         -E rm -rf "${BIN_OUTPUT_DIRECTORY}/${OWNCLOUD_OSX_BUNDLE}/Contents/PlugIns/bearer"
