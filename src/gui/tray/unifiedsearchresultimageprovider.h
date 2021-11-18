@@ -1,5 +1,5 @@
 /*
- * Copyright (C) by Klaas Freitag <freitag@owncloud.com>
+ * Copyright (C) by Oleksandr Zolotov <alex@nextcloud.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -12,25 +12,22 @@
  * for more details.
  */
 
+#pragma once
+
 #include <QtCore>
-
-#include "ActivityData.h"
-
+#include <QQuickImageProvider>
 
 namespace OCC {
 
-bool operator<(const Activity &rhs, const Activity &lhs)
-{
-    return rhs._dateTime > lhs._dateTime;
-}
+/**
+ * @brief The UnifiedSearchResultImageProvider
+ * @ingroup gui
+ * Allows to fetch Unified Search result icon from the server or used a local resource
+ */
 
-bool operator==(const Activity &rhs, const Activity &lhs)
+class UnifiedSearchResultImageProvider : public QQuickAsyncImageProvider
 {
-    return (rhs._type == lhs._type && rhs._id == lhs._id && rhs._accName == lhs._accName);
-}
-
-Activity::Identifier Activity::ident() const
-{
-    return Identifier(_id, _accName);
-}
+public:
+    QQuickImageResponse *requestImageResponse(const QString &id, const QSize &requestedSize) override;
+};
 }

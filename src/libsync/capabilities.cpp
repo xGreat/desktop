@@ -90,6 +90,26 @@ int Capabilities::sharePublicLinkExpireDateDays() const
     return _capabilities["files_sharing"].toMap()["public"].toMap()["expire_date"].toMap()["days"].toInt();
 }
 
+bool Capabilities::shareInternalEnforceExpireDate() const
+{
+    return _capabilities["files_sharing"].toMap()["public"].toMap()["expire_date_internal"].toMap()["enforced"].toBool();
+}
+
+int Capabilities::shareInternalExpireDateDays() const
+{
+    return _capabilities["files_sharing"].toMap()["public"].toMap()["expire_date_internal"].toMap()["days"].toInt();
+}
+
+bool Capabilities::shareRemoteEnforceExpireDate() const
+{
+    return _capabilities["files_sharing"].toMap()["public"].toMap()["expire_date_remote"].toMap()["enforced"].toBool();
+}
+
+int Capabilities::shareRemoteExpireDateDays() const
+{
+    return _capabilities["files_sharing"].toMap()["public"].toMap()["expire_date_remote"].toMap()["days"].toInt();
+}
+
 bool Capabilities::sharePublicLinkMultiple() const
 {
     return _capabilities["files_sharing"].toMap()["public"].toMap()["multiple"].toBool();
@@ -194,13 +214,6 @@ bool Capabilities::chunkingNg() const
     if (chunkng == "1")
         return true;
     return _capabilities["dav"].toMap()["chunking"].toByteArray() >= "1.0";
-}
-
-bool Capabilities::userStatusNotification() const
-{
-    return _capabilities.contains("notifications") &&
-        _capabilities["notifications"].toMap().contains("ocs-endpoints") &&
-        _capabilities["notifications"].toMap()["ocs-endpoints"].toStringList().contains("user-status");
 }
 
 bool Capabilities::userStatus() const

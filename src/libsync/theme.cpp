@@ -399,6 +399,24 @@ bool Theme::forceOverrideServerUrl() const
 #endif
 }
 
+bool Theme::enableStaplingOCSP() const
+{
+#ifdef APPLICATION_OCSP_STAPLING_ENABLED
+    return true;
+#else
+    return false;
+#endif
+}
+
+bool Theme::forbidBadSSL() const
+{
+#ifdef APPLICATION_FORBID_BAD_SSL
+    return true;
+#else
+    return false;
+#endif
+}
+
 QString Theme::forceConfigAuthType() const
 {
     return QString();
@@ -839,6 +857,27 @@ bool Theme::showVirtualFilesOption() const
 {
     const auto vfsMode = bestAvailableVfsMode();
     return ConfigFile().showExperimentalOptions() || vfsMode == Vfs::WindowsCfApi;
+}
+
+bool Theme::enforceVirtualFilesSyncFolder() const
+{
+    const auto vfsMode = bestAvailableVfsMode();
+    return ENFORCE_VIRTUAL_FILES_SYNC_FOLDER && vfsMode != OCC::Vfs::Off;
+}
+
+QColor Theme::errorBoxTextColor() const
+{
+    return QColor{"white"};
+}
+
+QColor Theme::errorBoxBackgroundColor() const
+{
+    return QColor{"red"};
+}
+
+QColor Theme::errorBoxBorderColor() const
+{ 
+    return QColor{"black"};
 }
 
 } // end namespace client

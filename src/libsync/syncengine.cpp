@@ -15,6 +15,7 @@
 
 #include "syncengine.h"
 #include "account.h"
+#include "common/filesystembase.h"
 #include "owncloudpropagator.h"
 #include "common/syncjournaldb.h"
 #include "common/syncjournalfilerecord.h"
@@ -53,6 +54,7 @@
 #include <QSslCertificate>
 #include <QProcess>
 #include <QElapsedTimer>
+#include <QFileInfo>
 #include <qtextcodec.h>
 
 namespace OCC {
@@ -579,7 +581,7 @@ void SyncEngine::startSync()
         invalidFilenamePattern = R"([\\:?*"<>|])";
     }
     if (!invalidFilenamePattern.isEmpty())
-        _discoveryPhase->_invalidFilenameRx = QRegExp(invalidFilenamePattern);
+        _discoveryPhase->_invalidFilenameRx = QRegularExpression(invalidFilenamePattern);
     _discoveryPhase->_serverBlacklistedFiles = _account->capabilities().blacklistedFiles();
     _discoveryPhase->_ignoreHiddenFiles = ignoreHiddenFiles();
 
@@ -695,7 +697,7 @@ void SyncEngine::slotDiscoveryFinished()
             const QString script = qEnvironmentVariable("OWNCLOUD_POST_UPDATE_SCRIPT");
 
             qCDebug(lcEngine) << "Post Update Script: " << script;
-            auto scriptArgs = script.split(QRegExp("\\s+"), Qt::SkipEmptyParts);
+            auto scriptArgs = script.split(QRegularExpression("\\s+"), Qt::SkipEmptyParts);
             if (scriptArgs.size() > 0) {
                 const auto scriptExecutable = scriptArgs.takeFirst();
                 QProcess::execute(scriptExecutable, scriptArgs);
@@ -1017,6 +1019,24 @@ void SyncEngine::wipeVirtualFiles(const QString &localPath, SyncJournalDb &journ
 
     // Postcondition: No ItemTypeVirtualFile / ItemTypeVirtualFileDownload left in the db.
     // But hydrated placeholders may still be around.
+}
+
+void SyncEngine::switchToVirtualFiles(const QString &localPath, SyncJournalDb &journal, Vfs &vfs)
+{
+    qCInfo(lcEngine) << "Convert to virtual files inside" << localPath;
+    journal.getFilesBelowPath({}, [&](const SyncJournalFileRecord &rec) {
+        const auto path = rec.path();
+        const auto fileName = QFileInfo(path).fileName();
+        if (FileSystem::isExcludeFile(fileName)) {
+            return;
+        }
+        SyncFileItem item;
+        QString localFile = localPath + path;
+        const auto result = vfs.convertToPlaceholder(localFile, item, localFile);
+        if (!result.isValid()) {
+            qCWarning(lcEngine) << "Could not convert file to placeholder" << result.error();
+        }
+    });
 }
 
 void SyncEngine::abort()

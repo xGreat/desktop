@@ -1,5 +1,8 @@
 project(gui)
-find_package(Qt5 REQUIRED COMPONENTS Widgets Svg Qml Quick QuickControls2)
+find_package(Qt5 REQUIRED COMPONENTS Widgets Svg Qml Quick QuickControls2 Xml Network)
+if (NOT TARGET Qt5::GuiPrivate)
+    message(FATAL_ERROR "Could not find GuiPrivate component of Qt5. It might be shipped as a separate package, please check that.")
+endif()
 
 if(CMAKE_BUILD_TYPE MATCHES Debug)
     add_definitions(-DQT_QML_DEBUG)
@@ -43,6 +46,14 @@ set(client_UI_SRCS
     tray/ActivityList.qml
     tray/Window.qml
     tray/UserLine.qml
+    tray/UnifiedSearchInputContainer.qml
+    tray/UnifiedSearchResultFetchMoreTrigger.qml
+    tray/UnifiedSearchResultItem.qml
+    tray/UnifiedSearchResultItemSkeleton.qml
+    tray/UnifiedSearchResultItemSkeletonContainer.qml
+    tray/UnifiedSearchResultListItem.qml
+    tray/UnifiedSearchResultNothingFound.qml
+    tray/UnifiedSearchResultSectionItem.qml
     wizard/flow2authwidget.ui
     wizard/owncloudadvancedsetuppage.ui
     wizard/owncloudconnectionmethoddialog.ui
@@ -90,6 +101,7 @@ set(client_SRCS
     sharelinkwidget.cpp
     sharemanager.cpp
     shareusergroupwidget.cpp
+    profilepagewidget.cpp
     sharee.cpp
     sslbutton.cpp
     sslerrordialog.cpp
@@ -107,18 +119,21 @@ set(client_SRCS
     guiutility.cpp
     elidedlabel.cpp
     headerbanner.cpp
-    iconjob.cpp
     iconutils.cpp
     remotewipe.cpp
     userstatusselectormodel.cpp
     emojimodel.cpp
     fileactivitylistmodel.cpp
+    tray/svgimageprovider.cpp
     tray/syncstatussummary.cpp
-    tray/ActivityData.cpp
-    tray/ActivityListModel.cpp
-    tray/UserModel.cpp
-    tray/NotificationHandler.cpp
-    tray/NotificationCache.cpp
+    tray/activitydata.cpp
+    tray/activitylistmodel.cpp
+    tray/unifiedsearchresult.cpp
+    tray/unifiedsearchresultimageprovider.cpp
+    tray/unifiedsearchresultslistmodel.cpp
+    tray/usermodel.cpp
+    tray/notificationhandler.cpp
+    tray/notificationcache.cpp
     creds/credentialsfactory.cpp
     creds/httpcredentialsgui.cpp
     creds/oauth.cpp

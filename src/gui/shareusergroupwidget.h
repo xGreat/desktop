@@ -19,6 +19,7 @@
 #include "sharemanager.h"
 #include "sharepermissions.h"
 #include "sharee.h"
+#include "profilepagewidget.h"
 #include "QProgressIndicator.h"
 #include <QDialog>
 #include <QWidget>
@@ -26,6 +27,7 @@
 #include <QList>
 #include <QVector>
 #include <QTimer>
+#include <qpushbutton.h>
 #include <qscrollarea.h>
 
 class QAction;
@@ -43,6 +45,21 @@ class AbstractCredentials;
 class SyncResult;
 class Share;
 class ShareManager;
+
+class AvatarEventFilter : public QObject
+{
+    Q_OBJECT
+
+public:
+    explicit AvatarEventFilter(QObject *parent = nullptr);
+
+signals:
+    void clicked();
+    void contextMenu(const QPoint &globalPosition);
+
+protected:
+    bool eventFilter(QObject *obj, QEvent *event) override;
+};
 
 /**
  * @brief The ShareDialog (user/group) class
@@ -166,6 +183,8 @@ private slots:
 
     void slotConfirmPasswordClicked();
 
+    void onAvatarContextMenu(const QPoint &globalPosition);
+
 private:
     void displayPermissions();
     void loadAvatar();
@@ -189,10 +208,15 @@ private:
   void enableProgessIndicatorAnimation(bool enable);
   void disableProgessIndicatorAnimation();
 
+  QDate maxExpirationDateForShare(const Share::ShareType type, const QDate &fallbackDate) const;
+  bool enforceExpirationDateForShare(const Share::ShareType type) const;
+
   Ui::ShareUserLine *_ui;
   AccountPtr _account;
   QSharedPointer<UserGroupShare> _share;
   bool _isFile;
+
+  ProfilePageMenu _profilePageMenu;
 
   // _permissionEdit is a checkbox
   QAction *_permissionReshare;

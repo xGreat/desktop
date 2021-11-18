@@ -709,14 +709,20 @@ void FakeChunkMoveReply::abort()
 }
 
 FakePayloadReply::FakePayloadReply(QNetworkAccessManager::Operation op, const QNetworkRequest &request, const QByteArray &body, QObject *parent)
-    : FakeReply { parent }
+    : FakePayloadReply(op, request, body, FakePayloadReply::defaultDelay, parent)
+{
+}
+
+FakePayloadReply::FakePayloadReply(
+    QNetworkAccessManager::Operation op, const QNetworkRequest &request, const QByteArray &body, int delay, QObject *parent)
+    : FakeReply{parent}
     , _body(body)
 {
     setRequest(request);
     setUrl(request.url());
     setOperation(op);
     open(QIODevice::ReadOnly);
-    QTimer::singleShot(10, this, &FakePayloadReply::respond);
+    QTimer::singleShot(delay, this, &FakePayloadReply::respond);
 }
 
 void FakePayloadReply::respond()
@@ -1051,6 +1057,19 @@ OCC::SyncFileItemPtr ItemCompletedSpy::findItem(const QString &path) const
             return item;
     }
     return OCC::SyncFileItemPtr::create();
+}
+
+OCC::SyncFileItemPtr ItemCompletedSpy::findItemWithExpectedRank(const QString &path, int rank) const
+{
+    Q_ASSERT(size() > rank);
+    Q_ASSERT(!(*this)[rank].isEmpty());
+
+    auto item = (*this)[rank][0].value<OCC::SyncFileItemPtr>();
+    if (item->destination() == path) {
+        return item;
+    } else {
+        return OCC::SyncFileItemPtr::create();
+    }
 }
 
 FakeReply::FakeReply(QObject *parent)

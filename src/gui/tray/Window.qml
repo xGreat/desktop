@@ -1,10 +1,11 @@
 import QtQml 2.12
 import QtQml.Models 2.1
-import QtQuick 2.9
+import QtQuick 2.15
 import QtQuick.Window 2.3
 import QtQuick.Controls 2.3
 import QtQuick.Layouts 1.2
 import QtGraphicalEffects 1.0
+import "../"
 
 // Custom qml modules are in /theme (and included by resources.qrc)
 import Style 1.0
@@ -101,6 +102,11 @@ Window {
     Rectangle {
         id: trayWindowBackground
 
+        property bool isUnifiedSearchActive: unifiedSearchResultsListViewSkeleton.visible
+                                             || unifiedSearchResultNothingFound.visible
+                                             || unifiedSearchResultsErrorLabel.visible
+                                             || unifiedSearchResultsListView.visible
+
         anchors.fill:   parent
         radius: Systray.useNormalWindow ? 0.0 : Style.trayWindowRadius
         border.width:   Style.trayWindowBorderWidth
@@ -136,187 +142,180 @@ Window {
                     Accessible.name: qsTr("Current account")
                     Accessible.onPressAction: currentAccountButton.clicked()
 
-                    MouseArea {
-                        id: accountBtnMouseArea
+                    // We call open() instead of popup() because we want to position it
+                    // exactly below the dropdown button, not the mouse
+                    onClicked: {
+                        syncPauseButton.text = Systray.syncIsPaused() ? qsTr("Resume sync for all") : qsTr("Pause sync for all")
+                        if (accountMenu.visible) {
+                            accountMenu.close()
+                        } else {
+                            accountMenu.open()
+                        }
+                    }
 
-                        anchors.fill:   parent
-                        hoverEnabled:   Style.hoverEffectsEnabled
+                    Loader {
+                        id: userStatusSelectorDialogLoader
+                    }
 
-                        // We call open() instead of popup() because we want to position it
-                        // exactly below the dropdown button, not the mouse
-                        onClicked: {
-                            syncPauseButton.text = Systray.syncIsPaused() ? qsTr("Resume sync for all") : qsTr("Pause sync for all")
-                            if (accountMenu.visible) {
-                                accountMenu.close()
-                            } else {
-                                accountMenu.open()
-                            }
+                    Menu {
+                        id: accountMenu
+
+                        // x coordinate grows towards the right
+                        // y coordinate grows towards the bottom
+                        x: (currentAccountButton.x + 2)
+                        y: (currentAccountButton.y + Style.trayWindowHeaderHeight + 2)
+
+                        width: (Style.currentAccountButtonWidth - 2)
+                        height: Math.min(implicitHeight, maxMenuHeight)
+                        closePolicy: Menu.CloseOnPressOutsideParent | Menu.CloseOnEscape
+
+                        background: Rectangle {
+                            border.color: Style.menuBorder
+                            radius: Style.currentAccountButtonRadius
                         }
 
-                        Loader {
-                            id: userStatusSelectorDialogLoader
+                        onClosed: {
+                            // HACK: reload account Instantiator immediately by restting it - could be done better I guess
+                            // see also onVisibleChanged above
+                            userLineInstantiator.active = false;
+                            userLineInstantiator.active = true;
                         }
 
-                        Menu {
-                            id: accountMenu
-
-                            // x coordinate grows towards the right
-                            // y coordinate grows towards the bottom
-                            x: (currentAccountButton.x + 2)
-                            y: (currentAccountButton.y + Style.trayWindowHeaderHeight + 2)
-
-                            width: (Style.currentAccountButtonWidth - 2)
-                            height: Math.min(implicitHeight, maxMenuHeight)
-                            closePolicy: Menu.CloseOnPressOutsideParent | Menu.CloseOnEscape
-
-                            background: Rectangle {
-                                border.color: Style.menuBorder
-                                radius: Style.currentAccountButtonRadius
-                            }
-
-                            onClosed: {
-                                // HACK: reload account Instantiator immediately by restting it - could be done better I guess
-                                // see also onVisibleChanged above
-                                userLineInstantiator.active = false;
-                                userLineInstantiator.active = true;
-                            }
-
-                            Instantiator {
-                                id: userLineInstantiator
-                                model: UserModel
-                                delegate: UserLine {
-                                    onShowUserStatusSelectorDialog: {
-                                        userStatusSelectorDialogLoader.source = "qrc:/qml/src/gui/UserStatusSelectorDialog.qml"
-                                        userStatusSelectorDialogLoader.item.title = qsTr("Set user status")
-                                        userStatusSelectorDialogLoader.item.model.load(index)
-                                        userStatusSelectorDialogLoader.item.show()
-                                    }
+                        Instantiator {
+                            id: userLineInstantiator
+                            model: UserModel
+                            delegate: UserLine {
+                                onShowUserStatusSelectorDialog: {
+                                    userStatusSelectorDialogLoader.source = "qrc:/qml/src/gui/UserStatusSelectorDialog.qml"
+                                    userStatusSelectorDialogLoader.item.title = qsTr("Set user status")
+                                    userStatusSelectorDialogLoader.item.model.load(index)
+                                    userStatusSelectorDialogLoader.item.show()
                                 }
-                                onObjectAdded: accountMenu.insertItem(index, object)
-                                onObjectRemoved: accountMenu.removeItem(object)
                             }
+                            onObjectAdded: accountMenu.insertItem(index, object)
+                            onObjectRemoved: accountMenu.removeItem(object)
+                        }
 
-                            MenuItem {
-                                id: addAccountButton
-                                height: Style.addAccountButtonHeight
-                                hoverEnabled: true
+                        MenuItem {
+                            id: addAccountButton
+                            height: Style.addAccountButtonHeight
+                            hoverEnabled: true
 
-                                background: Item {
-                                    height: parent.height
-                                    width: parent.menu.width
-                                    Rectangle {
-                                        anchors.fill: parent
-                                        anchors.margins: 1
-                                        color: parent.parent.hovered ? Style.lightHover : "transparent"
-                                    }
-                                }
-
-                                RowLayout {
+                            background: Item {
+                                height: parent.height
+                                width: parent.menu.width
+                                Rectangle {
                                     anchors.fill: parent
-                                    spacing: 0
-
-                                    Image {
-                                        Layout.leftMargin: 12
-                                        verticalAlignment: Qt.AlignCenter
-                                        source: "qrc:///client/theme/black/add.svg"
-                                        sourceSize.width: Style.headerButtonIconSize
-                                        sourceSize.height: Style.headerButtonIconSize
-                                    }
-                                    Label {
-                                        Layout.leftMargin: 14
-                                        text: qsTr("Add account")
-                                        color: "black"
-                                        font.pixelSize: Style.topLinePixelSize
-                                    }
-                                    // Filler on the right
-                                    Item {
-                                        Layout.fillWidth: true
-                                        Layout.fillHeight: true
-                                    }
-                                }
-                                onClicked: UserModel.addAccount()
-
-                                Accessible.role: Accessible.MenuItem
-                                Accessible.name: qsTr("Add new account")
-                                Accessible.onPressAction: addAccountButton.clicked()
-                            }
-
-                            MenuSeparator {
-                                contentItem: Rectangle {
-                                    implicitHeight: 1
-                                    color: Style.menuBorder
+                                    anchors.margins: 1
+                                    color: parent.parent.hovered || parent.parent.visualFocus ? Style.lightHover : "transparent"
                                 }
                             }
 
-                            MenuItem {
-                                id: syncPauseButton
-                                font.pixelSize: Style.topLinePixelSize
-                                hoverEnabled: true
-                                onClicked: Systray.pauseResumeSync()
+                            RowLayout {
+                                anchors.fill: parent
+                                spacing: 0
 
-                                background: Item {
-                                    height: parent.height
-                                    width: parent.menu.width
-                                    Rectangle {
-                                        anchors.fill: parent
-                                        anchors.margins: 1
-                                        color: parent.parent.hovered ? Style.lightHover : "transparent"
-                                    }
+                                Image {
+                                    Layout.leftMargin: 12
+                                    verticalAlignment: Qt.AlignCenter
+                                    source: "qrc:///client/theme/black/add.svg"
+                                    sourceSize.width: Style.headerButtonIconSize
+                                    sourceSize.height: Style.headerButtonIconSize
                                 }
+                                Label {
+                                    Layout.leftMargin: 14
+                                    text: qsTr("Add account")
+                                    color: "black"
+                                    font.pixelSize: Style.topLinePixelSize
+                                }
+                                // Filler on the right
+                                Item {
+                                    Layout.fillWidth: true
+                                    Layout.fillHeight: true
+                                }
+                            }
+                            onClicked: UserModel.addAccount()
 
-                                Accessible.role: Accessible.MenuItem
-                                Accessible.name: Systray.syncIsPaused() ? qsTr("Resume sync for all") : qsTr("Pause sync for all")
-                                Accessible.onPressAction: syncPauseButton.clicked()
+                            Accessible.role: Accessible.MenuItem
+                            Accessible.name: qsTr("Add new account")
+                            Accessible.onPressAction: addAccountButton.clicked()
+                        }
+
+                        MenuSeparator {
+                            contentItem: Rectangle {
+                                implicitHeight: 1
+                                color: Style.menuBorder
+                            }
+                        }
+
+                        MenuItem {
+                            id: syncPauseButton
+                            font.pixelSize: Style.topLinePixelSize
+                            hoverEnabled: true
+                            onClicked: Systray.pauseResumeSync()
+
+                            background: Item {
+                                height: parent.height
+                                width: parent.menu.width
+                                Rectangle {
+                                    anchors.fill: parent
+                                    anchors.margins: 1
+                                    color: parent.parent.hovered || parent.parent.visualFocus ? Style.lightHover : "transparent"
+                                }
                             }
 
-                            MenuItem {
-                                id: settingsButton
-                                text: qsTr("Settings")
-                                font.pixelSize: Style.topLinePixelSize
-                                hoverEnabled: true
-                                onClicked: Systray.openSettings()
+                            Accessible.role: Accessible.MenuItem
+                            Accessible.name: Systray.syncIsPaused() ? qsTr("Resume sync for all") : qsTr("Pause sync for all")
+                            Accessible.onPressAction: syncPauseButton.clicked()
+                        }
 
-                                background: Item {
-                                    height: parent.height
-                                    width: parent.menu.width
-                                    Rectangle {
-                                        anchors.fill: parent
-                                        anchors.margins: 1
-                                        color: parent.parent.hovered ? Style.lightHover : "transparent"
-                                    }
+                        MenuItem {
+                            id: settingsButton
+                            text: qsTr("Settings")
+                            font.pixelSize: Style.topLinePixelSize
+                            hoverEnabled: true
+                            onClicked: Systray.openSettings()
+
+                            background: Item {
+                                height: parent.height
+                                width: parent.menu.width
+                                Rectangle {
+                                    anchors.fill: parent
+                                    anchors.margins: 1
+                                    color: parent.parent.hovered || parent.parent.visualFocus ? Style.lightHover : "transparent"
                                 }
-
-                                Accessible.role: Accessible.MenuItem
-                                Accessible.name: text
-                                Accessible.onPressAction: settingsButton.clicked()
                             }
 
-                            MenuItem {
-                                id: exitButton
-                                text: qsTr("Exit");
-                                font.pixelSize: Style.topLinePixelSize
-                                hoverEnabled: true
-                                onClicked: Systray.shutdown()
+                            Accessible.role: Accessible.MenuItem
+                            Accessible.name: text
+                            Accessible.onPressAction: settingsButton.clicked()
+                        }
 
-                                background: Item {
-                                    height: parent.height
-                                    width: parent.menu.width
-                                    Rectangle {
-                                        anchors.fill: parent
-                                        anchors.margins: 1
-                                        color: parent.parent.hovered ? Style.lightHover : "transparent"
-                                    }
+                        MenuItem {
+                            id: exitButton
+                            text: qsTr("Exit");
+                            font.pixelSize: Style.topLinePixelSize
+                            hoverEnabled: true
+                            onClicked: Systray.shutdown()
+
+                            background: Item {
+                                height: parent.height
+                                width: parent.menu.width
+                                Rectangle {
+                                    anchors.fill: parent
+                                    anchors.margins: 1
+                                    color: parent.parent.hovered || parent.parent.visualFocus ? Style.lightHover : "transparent"
                                 }
-
-                                Accessible.role: Accessible.MenuItem
-                                Accessible.name: text
-                                Accessible.onPressAction: exitButton.clicked()
                             }
+
+                            Accessible.role: Accessible.MenuItem
+                            Accessible.name: text
+                            Accessible.onPressAction: exitButton.clicked()
                         }
                     }
 
                     background: Rectangle {
-                        color: accountBtnMouseArea.containsMouse ? "white" : "transparent"
+                        color: parent.hovered || parent.visualFocus ? "white" : "transparent"
                         opacity: 0.2
                     }
 
@@ -420,7 +419,7 @@ Window {
                                     visible: UserModel.currentUser.statusMessage !== ""
                                     width: Style.currentAccountLabelWidth
                                     text: UserModel.currentUser.statusMessage !== ""
-                                          ? UserModel.currentUser.statusMessage 
+                                          ? UserModel.currentUser.statusMessage
                                           : UserModel.currentUser.server
                                     elide: Text.ElideRight
                                     color: Style.ncTextColor
@@ -452,20 +451,20 @@ Window {
                 Item {
                     Layout.fillWidth: true
                 }
-                
+
                 RowLayout {
                     id: openLocalFolderRowLayout
                     spacing: 0
                     Layout.preferredWidth:  Style.trayWindowHeaderHeight
                     Layout.preferredHeight: Style.trayWindowHeaderHeight
                     Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
-                    
+
                     HeaderButton {
                         id: openLocalFolderButton
                         visible: UserModel.currentUser.hasLocalFolder
                         icon.source: "qrc:///client/theme/white/folder.svg"
                         onClicked: UserModel.openCurrentAccountLocalFolder()
-                        
+
                         Rectangle {
                             id: folderStateIndicatorBackground
                             width: Style.folderStateIndicatorSize
@@ -476,7 +475,7 @@ Window {
                             radius: width*0.5
                             z: 1
                         }
-    
+
                         Image {
                             id: folderStateIndicator
                             visible: UserModel.currentUser.hasLocalFolder
@@ -484,19 +483,17 @@ Window {
                                     ? Style.stateOnlineImageSource
                                     : Style.stateOfflineImageSource
                             cache: false
-                            
+
                             anchors.top: openLocalFolderButton.verticalCenter
-                            anchors.left: openLocalFolderButton.horizontalCenter  
+                            anchors.left: openLocalFolderButton.horizontalCenter
                             sourceSize.width: Style.folderStateIndicatorSize
                             sourceSize.height: Style.folderStateIndicatorSize
-        
+
                             Accessible.role: Accessible.Indicator
                             Accessible.name: UserModel.currentUser.isConnected ? qsTr("Connected") : qsTr("Disconnected")
                             z: 2
                         }
                     }
-                    
- 
 
                     Accessible.role: Accessible.Button
                     Accessible.name: qsTr("Open local folder of current account")
@@ -504,11 +501,11 @@ Window {
 
                 HeaderButton {
                     id: trayWindowTalkButton
-                    
+
                     visible: UserModel.currentUser.serverHasTalk
                     icon.source: "qrc:///client/theme/white/talk-app.svg"
                     onClicked: UserModel.openCurrentAccountTalk()
-                    
+
                     Accessible.role: Accessible.Button
                     Accessible.name: qsTr("Open Nextcloud Talk in browser")
                     Accessible.onPressAction: trayWindowTalkButton.clicked()
@@ -517,7 +514,7 @@ Window {
                 HeaderButton {
                     id: trayWindowAppsButton
                     icon.source: "qrc:///client/theme/white/more-apps.svg"
-  
+
                     onClicked: {
                         if(appsMenu.count <= 0) {
                             UserModel.openCurrentAccountServer()
@@ -566,20 +563,160 @@ Window {
             }
         }   // Rectangle trayWindowHeaderBackground
 
+        UnifiedSearchInputContainer {
+            id: trayWindowUnifiedSearchInputContainer
+            height: Style.trayWindowHeaderHeight * 0.65
+
+            anchors {
+                top: trayWindowHeaderBackground.bottom
+                left: trayWindowBackground.left
+                right: trayWindowBackground.right
+
+                margins: {
+                    top: 10
+                }
+            }
+
+            text: UserModel.currentUser.unifiedSearchResultsListModel.searchTerm
+            readOnly: !UserModel.currentUser.isConnected || UserModel.currentUser.unifiedSearchResultsListModel.currentFetchMoreInProgressProviderId
+            isSearchInProgress: UserModel.currentUser.unifiedSearchResultsListModel.isSearchInProgress
+            onTextEdited: { UserModel.currentUser.unifiedSearchResultsListModel.searchTerm = trayWindowUnifiedSearchInputContainer.text }
+            onClearText: { UserModel.currentUser.unifiedSearchResultsListModel.searchTerm = "" }
+        }
+
+        ErrorBox {
+            id: unifiedSearchResultsErrorLabel
+            visible:  UserModel.currentUser.unifiedSearchResultsListModel.errorString && !unifiedSearchResultsListView.visible && ! UserModel.currentUser.unifiedSearchResultsListModel.isSearchInProgress && ! UserModel.currentUser.unifiedSearchResultsListModel.currentFetchMoreInProgressProviderId
+            text:  UserModel.currentUser.unifiedSearchResultsListModel.errorString
+            color: Style.errorBoxBackgroundColor
+            backgroundColor: Style.errorBoxTextColor
+            borderColor: "transparent"
+            anchors.top: trayWindowUnifiedSearchInputContainer.bottom
+            anchors.left: trayWindowBackground.left
+            anchors.right: trayWindowBackground.right
+            anchors.margins: 10
+        }
+
+        UnifiedSearchResultNothingFound {
+            id: unifiedSearchResultNothingFound
+            visible: false
+            anchors.top: trayWindowUnifiedSearchInputContainer.bottom
+            anchors.left: trayWindowBackground.left
+            anchors.right: trayWindowBackground.right
+            anchors.topMargin: 10
+
+            text: UserModel.currentUser.unifiedSearchResultsListModel.searchTerm
+
+            property bool isSearchRunning: UserModel.currentUser.unifiedSearchResultsListModel.isSearchInProgress
+            property bool isSearchResultsEmpty: unifiedSearchResultsListView.count === 0
+            property bool nothingFound: text && isSearchResultsEmpty && !UserModel.currentUser.unifiedSearchResultsListModel.errorString
+
+            onIsSearchRunningChanged: {
+                if (unifiedSearchResultNothingFound.isSearchRunning) {
+                    visible = false;
+                } else {
+                    if (nothingFound) {
+                        visible = true;
+                    }
+                }
+            }
+
+            onTextChanged: {
+                visible = false;
+            }
+
+            onIsSearchResultsEmptyChanged: {
+                if (!unifiedSearchResultNothingFound.isSearchResultsEmpty) {
+                    visible = false;
+                }
+            }
+        }
+
+        UnifiedSearchResultItemSkeletonContainer {
+            id: unifiedSearchResultsListViewSkeleton
+            visible: !unifiedSearchResultNothingFound.visible && !unifiedSearchResultsListView.visible && ! UserModel.currentUser.unifiedSearchResultsListModel.errorString &&  UserModel.currentUser.unifiedSearchResultsListModel.searchTerm
+            anchors.top: trayWindowUnifiedSearchInputContainer.bottom
+            anchors.left: trayWindowBackground.left
+            anchors.right: trayWindowBackground.right
+            anchors.bottom: trayWindowBackground.bottom
+            textLeftMargin: trayWindowBackground.Style.unifiedSearchResultTextLeftMargin
+            textRightMargin: trayWindowBackground.Style.unifiedSearchResultTextRightMargin
+            iconWidth: trayWindowBackground.Style.unifiedSearchResulIconWidth
+            iconLeftMargin: trayWindowBackground.Style.unifiedSearchResulIconLeftMargin
+            itemHeight: trayWindowBackground.Style.unifiedSearchItemHeight
+            titleFontSize: trayWindowBackground.Style.unifiedSearchResulTitleFontSize
+            sublineFontSize: trayWindowBackground.Style.unifiedSearchResulSublineFontSize
+            titleColor: trayWindowBackground.Style.unifiedSearchResulTitleColor
+            sublineColor: trayWindowBackground.Style.unifiedSearchResulSublineColor
+            iconColor: "#afafaf"
+        }
+
+        ListView {
+            id: unifiedSearchResultsListView
+            anchors.top: trayWindowUnifiedSearchInputContainer.bottom
+            anchors.left: trayWindowBackground.left
+            anchors.right: trayWindowBackground.right
+            anchors.bottom: trayWindowBackground.bottom
+            spacing: 4
+            visible: count > 0
+            clip: true
+            ScrollBar.vertical: ScrollBar {
+                id: unifiedSearchResultsListViewScrollbar
+            }
+
+            keyNavigationEnabled: true
+
+            reuseItems: true
+
+            Accessible.role: Accessible.List
+            Accessible.name: qsTr("Unified search results list")
+
+            model: UserModel.currentUser.unifiedSearchResultsListModel
+
+            delegate: UnifiedSearchResultListItem {
+                width: unifiedSearchResultsListView.width
+                height: trayWindowBackground.Style.unifiedSearchItemHeight
+                isSearchInProgress:  unifiedSearchResultsListView.model.isSearchInProgress
+                textLeftMargin: trayWindowBackground.Style.unifiedSearchResultTextLeftMargin
+                textRightMargin: trayWindowBackground.Style.unifiedSearchResultTextRightMargin
+                iconWidth: trayWindowBackground.Style.unifiedSearchResulIconWidth
+                iconLeftMargin: trayWindowBackground.Style.unifiedSearchResulIconLeftMargin
+                titleFontSize: trayWindowBackground.Style.unifiedSearchResulTitleFontSize
+                sublineFontSize: trayWindowBackground.Style.unifiedSearchResulSublineFontSize
+                titleColor: trayWindowBackground.Style.unifiedSearchResulTitleColor
+                sublineColor: trayWindowBackground.Style.unifiedSearchResulSublineColor
+                currentFetchMoreInProgressProviderId: unifiedSearchResultsListView.model.currentFetchMoreInProgressProviderId
+                fetchMoreTriggerClicked: unifiedSearchResultsListView.model.fetchMoreTriggerClicked
+                resultClicked: unifiedSearchResultsListView.model.resultClicked
+                ListView.onPooled: isPooled = true
+                ListView.onReused: isPooled = false
+            }
+
+            section.property: "providerName"
+            section.criteria: ViewSection.FullString
+            section.delegate: UnifiedSearchResultSectionItem {
+                width: unifiedSearchResultsListView.width
+            }
+        }
+
         SyncStatus {
             id: syncStatus
 
-            anchors.top: trayWindowHeaderBackground.bottom
+            visible: !trayWindowBackground.isUnifiedSearchActive
+
+            anchors.top: trayWindowUnifiedSearchInputContainer.bottom
             anchors.left: trayWindowBackground.left
             anchors.right: trayWindowBackground.right
         }
 
         ActivityList {
+            visible: !trayWindowBackground.isUnifiedSearchActive
             anchors.top: syncStatus.bottom
             anchors.left: trayWindowBackground.left
             anchors.right: trayWindowBackground.right
             anchors.bottom: trayWindowBackground.bottom
-           
+
+            activeFocusOnTab: true
             model: activityModel
             onShowFileActivity: {
                 openFileActivityDialog(displayPath, absolutePath)
@@ -598,7 +735,7 @@ Window {
             function refresh() {
                 active = true
                 item.model.load(activityModel.accountState, absolutePath)
-                item.show()            
+                item.show()
             }
 
             active: false

@@ -12,7 +12,9 @@
  * for more details.
  */
 
+#include "ocsprofileconnector.h"
 #include "sharee.h"
+#include "tray/usermodel.h"
 #include "ui_shareusergroupwidget.h"
 #include "ui_shareuserline.h"
 #include "shareusergroupwidget.h"
@@ -36,7 +38,9 @@
 #include <QFileInfo>
 #include <QAbstractProxyModel>
 #include <QCompleter>
-#include <qlayout.h>
+#include <QBoxLayout>
+#include <QIcon>
+#include <QLayout>
 #include <QPropertyAnimation>
 #include <QMenu>
 #include <QAction>
@@ -48,14 +52,36 @@
 #include <QPainter>
 #include <QListWidget>
 #include <QSvgRenderer>
+#include <QPushButton>
+#include <QContextMenuEvent>
 
 #include <cstring>
 
 namespace {
-    const char *passwordIsSetPlaceholder = "●●●●●●●●";
+const char *passwordIsSetPlaceholder = "●●●●●●●●";
+
 }
 
 namespace OCC {
+
+AvatarEventFilter::AvatarEventFilter(QObject *parent)
+    : QObject(parent)
+{
+}
+
+
+bool AvatarEventFilter::eventFilter(QObject *obj, QEvent *event)
+{
+    if (event->type() == QEvent::ContextMenu) {
+        const auto contextMenuEvent = dynamic_cast<QContextMenuEvent *>(event);
+        if (!contextMenuEvent) {
+            return false;
+        }
+        emit contextMenu(contextMenuEvent->globalPos());
+        return true;
+    }
+    return QObject::eventFilter(obj, event);
+}
 
 ShareUserGroupWidget::ShareUserGroupWidget(AccountPtr account,
     const QString &sharePath,
@@ -249,7 +275,7 @@ void ShareUserGroupWidget::slotSharesFetched(const QList<QSharedPointer<Share>> 
         }
 
 
-        Q_ASSERT(share->getShareType() == Share::TypeUser || share->getShareType() == Share::TypeGroup || share->getShareType() == Share::TypeEmail || share->getShareType() == Share::TypeRoom);
+        Q_ASSERT(Share::isShareTypeUserGroupEmailRoomOrRemote(share->getShareType()));
         auto userGroupShare = qSharedPointerDynamicCast<UserGroupShare>(share);
         auto *s = new ShareUserLine(_account, userGroupShare, _maxSharingPermissions, _isFile, _parentScrollArea);
         connect(s, &ShareUserLine::resizeRequested, this, &ShareUserGroupWidget::slotAdjustScrollWidgetSize);
@@ -465,16 +491,14 @@ void ShareUserGroupWidget::activateShareeLineEdit()
     _ui->shareeLineEdit->setFocus();
 }
 
-ShareUserLine::ShareUserLine(AccountPtr account,
-                             QSharedPointer<UserGroupShare> share,
-                             SharePermissions maxSharingPermissions,
-                             bool isFile,
-                             QWidget *parent)
+ShareUserLine::ShareUserLine(AccountPtr account, QSharedPointer<UserGroupShare> share,
+    SharePermissions maxSharingPermissions, bool isFile, QWidget *parent)
     : QWidget(parent)
     , _ui(new Ui::ShareUserLine)
     , _account(account)
     , _share(share)
     , _isFile(isFile)
+    , _profilePageMenu(account, share->getShareWith()->shareWith())
 {
     Q_ASSERT(_share);
     _ui->setupUi(this);
@@ -618,9 +642,20 @@ ShareUserLine::ShareUserLine(AccountPtr account,
         _permissionReshare->setVisible(false);
     }
 
+    const auto avatarEventFilter = new AvatarEventFilter(_ui->avatar);
+    connect(avatarEventFilter, &AvatarEventFilter::contextMenu, this, &ShareUserLine::onAvatarContextMenu);
+    _ui->avatar->installEventFilter(avatarEventFilter);
+
     loadAvatar();
 
     customizeStyle();
+}
+
+void ShareUserLine::onAvatarContextMenu(const QPoint &globalPosition)
+{
+    if (_share->getShareType() == Share::TypeUser) {
+        _profilePageMenu.exec(globalPosition);
+    }
 }
 
 void ShareUserLine::loadAvatar()
@@ -1031,6 +1066,12 @@ void ShareUserLine::showExpireDateOptions(bool show, const QDate &initialDate)
         _ui->calendar->setMinimumDate(QDate::currentDate().addDays(1));
         _ui->calendar->setDate(initialDate.isValid() ? initialDate : _ui->calendar->minimumDate());
         _ui->calendar->setFocus();
+
+        if (enforceExpirationDateForShare(_share->getShareType())) {
+            _ui->calendar->setMaximumDate(maxExpirationDateForShare(_share->getShareType(), _ui->calendar->maximumDate()));
+            _expirationDateLinkAction->setChecked(true);
+            _expirationDateLinkAction->setEnabled(false);
+        }
     }
 
     emit resizeRequested();
@@ -1070,6 +1111,35 @@ void ShareUserLine::togglePasswordSetProgressAnimation(bool show)
 void ShareUserLine::disableProgessIndicatorAnimation()
 {
     enableProgessIndicatorAnimation(false);
+}
+
+QDate ShareUserLine::maxExpirationDateForShare(const Share::ShareType type, const QDate &fallbackDate) const
+{
+    auto daysToExpire = 0;
+    if (type == Share::ShareType::TypeRemote) {
+        daysToExpire = _account->capabilities().shareRemoteExpireDateDays();
+    } else if (type == Share::ShareType::TypeEmail) {
+       daysToExpire = _account->capabilities().sharePublicLinkExpireDateDays();
+    } else {
+        daysToExpire = _account->capabilities().shareInternalExpireDateDays();
+    }
+
+    if (daysToExpire > 0) {
+        return QDate::currentDate().addDays(daysToExpire);
+    }
+
+    return fallbackDate;
+}
+
+bool ShareUserLine::enforceExpirationDateForShare(const Share::ShareType type) const
+{
+    if (type == Share::ShareType::TypeRemote) {
+        return _account->capabilities().shareRemoteEnforceExpireDate();
+    } else if (type == Share::ShareType::TypeEmail) {
+        return _account->capabilities().sharePublicLinkEnforceExpireDate();
+    }
+
+    return _account->capabilities().shareInternalEnforceExpireDate();
 }
 
 void ShareUserLine::setPasswordConfirmed()

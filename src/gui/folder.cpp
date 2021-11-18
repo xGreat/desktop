@@ -669,8 +669,10 @@ void Folder::setVirtualFilesEnabled(bool enabled)
 
         _definition.virtualFilesMode = newMode;
         startVfs();
-        if (newMode != Vfs::Off)
+        if (newMode != Vfs::Off) {
             _saveInFoldersWithPlaceholders = true;
+            switchToVirtualFiles();
+        }
         saveToSettings();
     }
 }
@@ -684,6 +686,11 @@ void Folder::setRootPinState(PinState state)
     // We don't actually need discovery, but it's important to recurse
     // into all folders, so the changes can be applied.
     slotNextSyncFullLocalDiscovery();
+}
+
+void Folder::switchToVirtualFiles()
+{
+    SyncEngine::switchToVirtualFiles(path(), _journal, *_vfs);
 }
 
 bool Folder::supportsSelectiveSync() const
@@ -859,9 +866,25 @@ void Folder::startSync(const QStringList &pathList)
 
     _engine->setIgnoreHiddenFiles(_definition.ignoreHiddenFiles);
 
+    correctPlaceholderFiles();
+
     QMetaObject::invokeMethod(_engine.data(), "startSync", Qt::QueuedConnection);
 
     emit syncStarted();
+}
+
+void Folder::correctPlaceholderFiles()
+{
+    if (_definition.virtualFilesMode == Vfs::Off) {
+        return;
+    }
+    static const auto placeholdersCorrectedKey = QStringLiteral("placeholders_corrected");
+    const auto placeholdersCorrected = _journal.keyValueStoreGetBool(placeholdersCorrectedKey, false);
+    if (!placeholdersCorrected) {
+        qCDebug(lcFolder) << "Make sure all virtual files are placeholder files";
+        switchToVirtualFiles();
+        _journal.keyValueStoreSet(placeholdersCorrectedKey, true);
+    }
 }
 
 void Folder::setSyncOptions()

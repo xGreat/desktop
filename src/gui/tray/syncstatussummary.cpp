@@ -18,7 +18,7 @@
 #include "navigationpanehelper.h"
 #include "networkjobs.h"
 #include "syncresult.h"
-#include "tray/UserModel.h"
+#include "tray/usermodel.h"
 
 #include <theme.h>
 
@@ -166,7 +166,7 @@ void SyncStatusSummary::setSyncStateForFolder(const Folder *folder)
     case SyncResult::Problem:
     case SyncResult::Undefined:
         setSyncing(false);
-        setSyncStatusString(tr("Some files had problems during the sync!"));
+        setSyncStatusString(tr("Some files could not be synced!"));
         setSyncStatusDetailString(tr("See below for warnings"));
         setSyncIcon(Theme::instance()->syncStatusWarning());
         markFolderAsError(folder);
