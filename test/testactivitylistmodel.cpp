@@ -37,9 +37,9 @@ static QByteArray fake500Response = R"(
 
 class FakeRemoteActivityStorage
 {
-public:
     FakeRemoteActivityStorage() = default;
 
+public:
     static FakeRemoteActivityStorage *instance()
     {
         if (!_instance) {
@@ -48,7 +48,7 @@ public:
         }
 
         return _instance;
-    };
+    }
 
     static void destroy()
     {
@@ -130,6 +130,8 @@ private:
     quint32 _numItemsToInsert = 30;
     int _startingId = 90000;
 };
+
+FakeRemoteActivityStorage *FakeRemoteActivityStorage::_instance = nullptr;
 
 class TestActivityListModel : public QObject
 {
