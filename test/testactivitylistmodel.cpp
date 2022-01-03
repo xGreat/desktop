@@ -47,9 +47,18 @@ public:
     {
     };
 
-    void testRemoteActivityIngest(const QJsonDocument &json)
+    void startFetchJob() override
     {
-        activitiesReceived(json, 200);
+        auto *job = new OCC::JsonApiJob(accountState()->account(), QLatin1String("ocs/v2.php/apps/activity/api/v2/activity"), this);
+        QObject::connect(job, &OCC::JsonApiJob::jsonReceived,
+            this, &TestingALM::activitiesReceived);
+
+        QUrlQuery params;
+        params.addQueryItem(QLatin1String("since"), QString::number(STARTING_ID));
+        params.addQueryItem(QLatin1String("limit"), QString::number(50));
+        job->addQueryParams(params);
+
+        job->start();
     };
 };
 
@@ -176,20 +185,49 @@ private slots:
 
         accountState.reset(new OCC::AccountState(account));
 
+        fakeQnam->setOverride([this](QNetworkAccessManager::Operation op, const QNetworkRequest &req, QIODevice *device) {
+            Q_UNUSED(device);
+            QNetworkReply *reply = nullptr;
+
+            const auto urlQuery = QUrlQuery(req.url());
+            const auto format = urlQuery.queryItemValue(QStringLiteral("format"));
+            const auto since = urlQuery.queryItemValue(QStringLiteral("since")).toInt();
+            const auto limit = urlQuery.queryItemValue(QStringLiteral("limit")).toInt();
+            const auto path = req.url().path();
+
+            if (!req.url().toString().startsWith(accountState->account()->url().toString())) {
+                reply = new FakeErrorReply(op, req, this, 404, fake404Response);
+            }
+            if (format != QStringLiteral("json")) {
+                reply = new FakeErrorReply(op, req, this, 400, fake400Response);
+            }
+
+            if (path.startsWith(QStringLiteral("/ocs/v2.php/apps/activity/api/v2/activity"))) {
+                reply = new FakePayloadReply(op, req, FakeRemoteActivityStorage::instance()->activityJsonData(since, limit), searchResultsReplyDelay, fakeQnam.data());
+            }
+
+            if (!reply) {
+                return qobject_cast<QNetworkReply*>(new FakeErrorReply(op, req, this, 404, QByteArrayLiteral("{error: \"Not found!\"}")));
+            }
+
+            return reply;
+        });
+
         model.reset(new OCC::ActivityListModel(accountState.data()));
 
         modelTester.reset(new QAbstractItemModelTester(model.data()));
     };
 
     // Test receiving activity from server
-    void testReceivingRemoteActivity() {
+    void testFetchingRemoteActivity() {
         auto alm = new TestingALM(accountState.data());
         QVERIFY(alm->rowCount() == 0);
 
         QJsonDocument testData = QJsonDocument::fromJson(FakeRemoteActivityStorage::instance()->activityJsonData(STARTING_ID, 50));
 
-        alm->testRemoteActivityIngest(testData);
-        qDebug() << alm->rowCount();
+        alm->startFetchJob();
+        QSignalSpy activitiesJob(alm, &TestingALM::activityJobStatusCode);
+        QVERIFY(activitiesJob.wait(3000));
         QVERIFY(alm->rowCount() > 0);
     };
 
