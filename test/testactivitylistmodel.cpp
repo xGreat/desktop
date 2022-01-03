@@ -23,6 +23,8 @@
 #include <QSignalSpy>
 #include <QTest>
 
+#define STARTING_ID 90000
+
 static QByteArray fake404Response = R"(
 {"ocs":{"meta":{"status":"failure","statuscode":404,"message":"Invalid query, please check the syntax. API specifications are here: http:\/\/www.freedesktop.org\/wiki\/Specifications\/open-collaboration-services.\n"},"data":[]}}
 )";
@@ -34,6 +36,22 @@ static QByteArray fake400Response = R"(
 static QByteArray fake500Response = R"(
 {"ocs":{"meta":{"status":"failure","statuscode":500,"message":"Internal Server Error.\n"},"data":[]}}
 )";
+
+class TestingALM : public OCC::ActivityListModel
+{
+    Q_OBJECT
+
+public:
+    TestingALM(OCC::AccountState *accountState, QObject *parent = nullptr) :
+        OCC::ActivityListModel(accountState, parent)
+    {
+    };
+
+    void testRemoteActivityIngest(const QJsonDocument &json)
+    {
+        activitiesReceived(json, 200);
+    };
+};
 
 class FakeRemoteActivityStorage
 {
@@ -74,7 +92,7 @@ public:
     void initActivityData()
     {
         // Insert activity data
-        for (quint32 i = 0; i < _numItemsToInsert; i++) {
+        for (quint32 i = 0; i <= _numItemsToInsert; i++) {
             _startingId++;
 
             QJsonObject activity;
@@ -110,7 +128,7 @@ public:
             dataIndex > 0 && iteration < limit;
             dataIndex--, iteration ++) {
 
-            if(_activityData[dataIndex].toObject().value(QStringLiteral("activity_id")).toInt() < sinceId) {
+            if(_activityData[dataIndex].toObject().value(QStringLiteral("activity_id")).toInt() > sinceId) {
                 data.append(_activityData[dataIndex]);
             }
         }
@@ -128,7 +146,7 @@ private:
     QJsonArray _activityData;
     QVariantMap _metaSuccess;
     quint32 _numItemsToInsert = 30;
-    int _startingId = 90000;
+    int _startingId = STARTING_ID;
 };
 
 FakeRemoteActivityStorage *FakeRemoteActivityStorage::_instance = nullptr;
@@ -158,44 +176,23 @@ private slots:
 
         accountState.reset(new OCC::AccountState(account));
 
-        fakeQnam->setOverride([this](QNetworkAccessManager::Operation op, const QNetworkRequest &req, QIODevice *device) {
-            Q_UNUSED(device);
-            QNetworkReply *reply = nullptr;
-
-            const auto urlQuery = QUrlQuery(req.url());
-            const auto format = urlQuery.queryItemValue(QStringLiteral("format"));
-            const auto since = urlQuery.queryItemValue(QStringLiteral("since")).toInt();
-            const auto limit = urlQuery.queryItemValue(QStringLiteral("limit")).toInt();
-            const auto path = req.url().path();
-
-            if (!req.url().toString().startsWith(accountState->account()->url().toString())) {
-                reply = new FakeErrorReply(op, req, this, 404, fake404Response);
-            }
-            if (format != QStringLiteral("json")) {
-                reply = new FakeErrorReply(op, req, this, 400, fake400Response);
-            }
-
-            // handle search for provider
-            if (path.startsWith(QStringLiteral("/ocs/v2.php/apps/activity/api/v2/activity"))) {
-                const auto pathSplit = path.mid(QString(QStringLiteral("/ocs/v2.php/apps/activity/api/v2/activity")).size()).split(QLatin1Char('/'), Qt::SkipEmptyParts);
-
-                if (!pathSplit.isEmpty()) {
-                    reply = new FakePayloadReply(op, req, FakeRemoteActivityStorage::instance()->activityJsonData(since, limit), searchResultsReplyDelay, fakeQnam.data());
-                }
-            }
-
-            if (!reply) {
-                return qobject_cast<QNetworkReply*>(new FakeErrorReply(op, req, this, 404, QByteArrayLiteral("{error: \"Not found!\"}")));
-            }
-
-            return reply;
-        });
-
         model.reset(new OCC::ActivityListModel(accountState.data()));
 
         modelTester.reset(new QAbstractItemModelTester(model.data()));
     };
+
     // Test receiving activity from server
+    void testReceivingRemoteActivity() {
+        auto alm = new TestingALM(accountState.data());
+        QVERIFY(alm->rowCount() == 0);
+
+        QJsonDocument testData = QJsonDocument::fromJson(FakeRemoteActivityStorage::instance()->activityJsonData(STARTING_ID, 50));
+
+        alm->testRemoteActivityIngest(testData);
+        qDebug() << alm->rowCount();
+        QVERIFY(alm->rowCount() > 0);
+    };
+
     // Test receiving activity from local user action
     // Test removing activity from list
 };
