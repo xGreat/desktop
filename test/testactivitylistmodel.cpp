@@ -119,14 +119,20 @@ public:
         }
 
         // Insert notification data
-        /*for (quint32 i = 0; i < _numItemsToInsert; i++) {
+        for (quint32 i = 0; i < _numItemsToInsert; i++) {
             _startingId++;
             QJsonObject activity;
             activity.insert(QStringLiteral("activity_id"), _startingId);
-            //activity.insert(QStringLiteral("type"), "Notification"
+            activity.insert(QStringLiteral("object_type"), "calendar");
+            activity.insert(QStringLiteral("type"), QStringLiteral("calendar-event"));
+            activity.insert(QStringLiteral("subject"), QStringLiteral("You created event %1 in calendar Events").arg(i));
+            activity.insert(QStringLiteral("message"), QStringLiteral(""));
+            activity.insert(QStringLiteral("object_name"), QStringLiteral(""));
+            activity.insert(QStringLiteral("datetime"), QDateTime::currentDateTime().toString(Qt::ISODate));
+            activity.insert(QStringLiteral("icon"), QStringLiteral("http://example.de/core/img/places/calendar.svg"));
 
             _activityData.push_back(activity);
-        }*/
+        }
     }
 
     const QByteArray activityJsonData(int sinceId, int limit)
@@ -170,7 +176,7 @@ public:
     QScopedPointer<FakeQNAM> fakeQnam;
     OCC::AccountPtr account;
     QScopedPointer<OCC::AccountState> accountState;
-    QScopedPointer<OCC::ActivityListModel> model;
+    QScopedPointer<TestingALM> model;
     QScopedPointer<QAbstractItemModelTester> modelTester;
 
     static const int searchResultsReplyDelay = 100;
@@ -213,25 +219,23 @@ private slots:
             return reply;
         });
 
-        model.reset(new OCC::ActivityListModel(accountState.data()));
+        model.reset(new TestingALM(accountState.data()));
 
         modelTester.reset(new QAbstractItemModelTester(model.data()));
     };
 
     // Test receiving activity from server
     void testFetchingRemoteActivity() {
-        auto alm = new TestingALM(accountState.data());
-        QVERIFY(alm->rowCount() == 0);
+        QVERIFY(model->rowCount() == 0);
 
-        QJsonDocument testData = QJsonDocument::fromJson(FakeRemoteActivityStorage::instance()->activityJsonData(STARTING_ID, 50));
-
-        alm->startFetchJob();
-        QSignalSpy activitiesJob(alm, &TestingALM::activityJobStatusCode);
+        model->startFetchJob();
+        QSignalSpy activitiesJob(model.data(), &TestingALM::activityJobStatusCode);
         QVERIFY(activitiesJob.wait(3000));
-        QVERIFY(alm->rowCount() > 0);
+        QCOMPARE(model->rowCount(), 50);
     };
 
     // Test receiving activity from local user action
+
     // Test removing activity from list
 };
 
