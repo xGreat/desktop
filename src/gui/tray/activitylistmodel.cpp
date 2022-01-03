@@ -589,12 +589,6 @@ void ActivityListModel::combineActivityLists()
     _finalList.clear();
     endResetModel();
 
-    // For some strange and possible mystical reason, clearing _finalList
-    // does not necessarily clear _finalList. This leads to a situation where
-    // rowCount reports bad numbers of rows, as if it were the prior count
-    // of rows plus the new ones we are inserting. Since usually finalList gets
-    // cleared, check here if it is empty to avoid the kerfuffle
-
     if (resultList.count() > 0 && _finalList.isEmpty()) {
         beginInsertRows(QModelIndex(), 0, resultList.count() - 1);
         _finalList = resultList;
