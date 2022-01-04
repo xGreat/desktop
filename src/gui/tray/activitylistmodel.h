@@ -44,7 +44,6 @@ class ActivityListModel : public QAbstractListModel
 public:
     enum DataRole {
         ActionIconRole = Qt::UserRole + 1,
-        UserIconRole,
         AccountRole,
         ObjectTypeRole,
         ActionsLinksRole,
@@ -58,7 +57,6 @@ public:
         LinkRole,
         PointInTimeRole,
         AccountConnectedRole,
-        SyncFileStatusRole,
         DisplayActions,
         ShareableRole,
     };
@@ -84,6 +82,7 @@ public:
     void addSyncFileItemToActivityList(Activity activity);
     void removeActivityFromActivityList(int row);
     void removeActivityFromActivityList(Activity activity);
+    void clearAll();
 
     int maxActivities() { return _maxActivities; };
 

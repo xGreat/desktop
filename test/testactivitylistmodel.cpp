@@ -16,6 +16,7 @@
 
 #include "account.h"
 #include "accountstate.h"
+#include "accountmanager.h"
 #include "syncenginetestutils.h"
 
 #include <QAbstractItemModelTester>
@@ -175,6 +176,9 @@ class TestActivityListModel : public QObject
 
 public:
     TestActivityListModel() = default;
+    ~TestActivityListModel() {
+        OCC::AccountManager::instance()->deleteAccount(accountState.data());
+    }
 
     QScopedPointer<FakeQNAM> fakeQnam;
     OCC::AccountPtr account;
@@ -225,10 +229,13 @@ private slots:
         model.reset(new TestingALM(accountState.data()));
 
         modelTester.reset(new QAbstractItemModelTester(model.data()));
+
+        OCC::AccountManager::instance()->addAccount(account);
     };
 
     // Test receiving activity from server
     void testFetchingRemoteActivity() {
+        model->clearAll();
         QVERIFY(model->rowCount() == 0);
 
         model->startFetchJob();
@@ -238,8 +245,75 @@ private slots:
     };
 
     // Test receiving activity from local user action
+    void testLocalSyncFileAction() {
+        model->clearAll();
+        QVERIFY(model->rowCount() == 0);
+
+        OCC::Activity activity;
+
+        model->addSyncFileItemToActivityList(activity);
+        QCOMPARE(model->rowCount(), 1);
+
+        const auto index = model->index(0, 0);
+        QVERIFY(index.isValid());
+    };
+
+    void testAddNotification(OCC::Activity activity = OCC::Activity()) {
+        model->clearAll();
+        QVERIFY(model->rowCount() == 0);
+
+        model->addNotificationToActivityList(activity);
+        QCOMPARE(model->rowCount(), 1);
+
+        const auto index = model->index(0, 0);
+        QVERIFY(index.isValid());
+    };
+
+    void testAddError() {
+        model->clearAll();
+        QVERIFY(model->rowCount() == 0);
+
+        OCC::Activity activity;
+
+        model->addErrorToActivityList(activity);
+        QCOMPARE(model->rowCount(), 1);
+
+        const auto index = model->index(0, 0);
+        QVERIFY(index.isValid());
+    };
 
     // Test removing activity from list
+    void testRemoveActivityWithRow() {
+        model->clearAll();
+        QVERIFY(model->rowCount() == 0);
+
+        OCC::Activity activity;
+        model->addSyncFileItemToActivityList(activity);
+        QCOMPARE(model->rowCount(), 1);
+
+        model->removeActivityFromActivityList(0);
+        QCOMPARE(model->rowCount(), 0);
+    }
+
+    void testRemoveActivityWithActivity() {
+        model->clearAll();
+        QVERIFY(model->rowCount() == 0);
+
+        // Activity comparison is done by checking type, id, and accName
+        OCC::Activity activity;
+        activity._accName = QStringLiteral("Mr. Chonkers");
+        activity._id = 1;
+        activity._type = OCC::Activity::NotificationType;
+
+        testAddNotification(activity);
+        QCOMPARE(model->rowCount(), 1);
+
+        model->removeActivityFromActivityList(activity);
+        QCOMPARE(model->rowCount(), 0);
+    }
+
+    // Test getting the data from the model
+
 };
 
 QTEST_MAIN(TestActivityListModel)
