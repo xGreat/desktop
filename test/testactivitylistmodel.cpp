@@ -176,7 +176,7 @@ class TestActivityListModel : public QObject
 
 public:
     TestActivityListModel() = default;
-    ~TestActivityListModel() {
+    ~TestActivityListModel() override {
         OCC::AccountManager::instance()->deleteAccount(accountState.data());
     }
 
