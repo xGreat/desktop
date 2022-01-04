@@ -274,23 +274,12 @@ QVariant ActivityListModel::data(const QModelIndex &index, int role) const
     return QVariant();
 }
 
-bool ActivityListModel::hasChildren(const QModelIndex &) const
+int ActivityListModel::rowCount(const QModelIndex &parent) const
 {
-    // Is a list, so no indexes have children
-    return false;
-}
-
-bool ActivityListModel::hasIndex(int row, int column, const QModelIndex &parent) const
-{
-    if(column > 0 || parent.isValid()) {
-        return false;
+    if(parent.isValid()) {
+        return 0;
     }
 
-    return row < rowCount();
-}
-
-int ActivityListModel::rowCount(const QModelIndex &) const
-{
     return _finalList.count();
 }
 

@@ -69,8 +69,6 @@ public:
 
     QVariant data(const QModelIndex &index, int role) const override;
     int rowCount(const QModelIndex &parent = QModelIndex()) const override;
-    bool hasChildren(const QModelIndex &parent = QModelIndex()) const override;
-    bool hasIndex(int row, int column, const QModelIndex &parent = QModelIndex()) const override;
 
     bool canFetchMore(const QModelIndex &) const override;
     void fetchMore(const QModelIndex &) override;
