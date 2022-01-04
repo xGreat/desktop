@@ -134,6 +134,7 @@ QVariant ActivityListModel::data(const QModelIndex &index, int role) const
         return QString();
     case PathRole:
         if (!a._file.isEmpty()) {
+            qDebug() << a._file;
             const auto folder = FolderMan::instance()->folder(a._folder);
 
             QString relPath(a._file);
@@ -153,6 +154,7 @@ QVariant ActivityListModel::data(const QModelIndex &index, int role) const
             if (folder) {
                 SyncJournalFileRecord rec;
                 folder->journalDb()->getFileRecord(a._file.mid(1), &rec);
+                qDebug("FF");
                 if (rec.isValid() && (rec._isE2eEncrypted || !rec._e2eMangledName.isEmpty())) {
                     return QString();
                 }

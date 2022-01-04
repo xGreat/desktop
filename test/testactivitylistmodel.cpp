@@ -332,7 +332,75 @@ private slots:
     }
 
     // Test getting the data from the model
+    void testData() {
+        model->clearAll();
+        QVERIFY(model->rowCount() == 0);
 
+        model->startFetchJob();
+        QSignalSpy activitiesJob(model.data(), &TestingALM::activityJobStatusCode);
+        QVERIFY(activitiesJob.wait(3000));
+        QCOMPARE(model->rowCount(), 50);
+
+        model->addNotificationToActivityList(testNotificationActivity);
+        QCOMPARE(model->rowCount(), 51);
+
+        OCC::Activity syncResultActivity;
+        syncResultActivity._id = 2;
+        syncResultActivity._type = OCC::Activity::SyncResultType;
+        syncResultActivity._status = OCC::SyncResult::Error;
+        syncResultActivity._dateTime = QDateTime::currentDateTime();
+        syncResultActivity._subject = QStringLiteral("Sample failed sync text");
+        syncResultActivity._message = QStringLiteral("/path/to/thingy");
+        syncResultActivity._link = QStringLiteral("/path/to/thingy");
+        syncResultActivity._accName = accountState->account()->displayName();
+        model->addSyncFileItemToActivityList(syncResultActivity);
+        QCOMPARE(model->rowCount(), 52);
+
+        OCC::Activity syncFileItemActivity;
+        syncFileItemActivity._id = 3;
+        syncFileItemActivity._type = OCC::Activity::SyncFileItemType; //client activity
+        syncFileItemActivity._status = OCC::SyncFileItem::Success;
+        syncFileItemActivity._dateTime = QDateTime::currentDateTime();
+        syncFileItemActivity._message = QStringLiteral("You created xyz.pdf");
+        syncFileItemActivity._link = accountState->account()->url();
+        syncFileItemActivity._accName = accountState->account()->displayName();
+        syncFileItemActivity._file = QStringLiteral("xyz.pdf");;
+        syncFileItemActivity._fileAction = "";
+        model->addSyncFileItemToActivityList(syncFileItemActivity);
+        QCOMPARE(model->rowCount(), 53);
+
+        // Test all rows for things in common
+        for (int i = 0; i < model->rowCount(); i++) {
+            const auto index = model->index(i, 0);
+
+            QVERIFY(index.data(OCC::ActivityListModel::ObjectTypeRole).canConvert<int>());
+            const auto type = index.data(OCC::ActivityListModel::ObjectTypeRole).toInt();
+            QVERIFY(type >= OCC::Activity::ActivityType);
+
+            QVERIFY(!index.data(OCC::ActivityListModel::ObjectTypeRole).toInt());
+            QVERIFY(!index.data(OCC::ActivityListModel::AccountRole).toString().isEmpty());
+            QVERIFY(!index.data(OCC::ActivityListModel::ActionTextColorRole).toString().isEmpty());
+            QVERIFY(!index.data(OCC::ActivityListModel::ActionIconRole).toString().isEmpty());
+            QVERIFY(!index.data(OCC::ActivityListModel::PointInTimeRole).toString().isEmpty());
+
+            QVERIFY(index.data(OCC::ActivityListModel::ActionsLinksRole).canConvert<QList<QVariant>>());
+            QVERIFY(index.data(OCC::ActivityListModel::ActionTextRole).canConvert<QString>());
+            QVERIFY(index.data(OCC::ActivityListModel::MessageRole).canConvert<QString>());
+            QVERIFY(index.data(OCC::ActivityListModel::LinkRole).canConvert<QUrl>());
+            QVERIFY(index.data(OCC::ActivityListModel::AccountConnectedRole).canConvert<bool>());
+            QVERIFY(index.data(OCC::ActivityListModel::DisplayActions).canConvert<bool>());
+
+            // Unfortunately, trying to check anything relating to filepaths causes a crash
+            // when the folder manager is invoked by the model to look for the relevant file
+            /* QVERIFY(index.data(OCC::ActivityListModel::ShareableRole).canConvert<bool>());
+
+            if(type == OCC::Activity::SyncFileItemType) {
+                QVERIFY(!index.data(OCC::ActivityListModel::PathRole).toString().isEmpty());
+                QVERIFY(!index.data(OCC::ActivityListModel::AbsolutePathRole).toString().isEmpty());
+                QVERIFY(!index.data(OCC::ActivityListModel::DisplayPathRole).toString().isEmpty());
+            }*/
+        }
+    };
 
 };
 
