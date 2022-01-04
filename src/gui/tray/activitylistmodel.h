@@ -84,7 +84,7 @@ public:
     void removeActivityFromActivityList(Activity activity);
     void clearAll();
 
-    int maxActivities() { return _maxActivities; };
+    int maxActivities() const { return _maxActivities; };
 
     Q_INVOKABLE void triggerDefaultAction(int activityIndex);
     Q_INVOKABLE void triggerAction(int activityIndex, int actionIndex);
