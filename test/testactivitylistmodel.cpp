@@ -18,6 +18,7 @@
 #include "accountstate.h"
 #include "accountmanager.h"
 #include "syncenginetestutils.h"
+#include "syncresult.h"
 
 #include <QAbstractItemModelTester>
 #include <QDesktopServices>
@@ -115,7 +116,6 @@ public:
             activity.insert(QStringLiteral("subject"), QStringLiteral("You created %1.txt").arg(i));
             activity.insert(QStringLiteral("message"), QStringLiteral(""));
             activity.insert(QStringLiteral("object_name"), QStringLiteral("%1.txt").arg(i));
-            activity.insert(QStringLiteral("link"), QStringLiteral("http://example.de/index.php/f/%1").arg(_startingId));
             activity.insert(QStringLiteral("datetime"), QDateTime::currentDateTime().toString(Qt::ISODate));
             activity.insert(QStringLiteral("icon"), QStringLiteral("http://example.de/apps/files/img/add-color.svg"));
 
@@ -186,6 +186,8 @@ public:
     QScopedPointer<TestingALM> model;
     QScopedPointer<QAbstractItemModelTester> modelTester;
 
+    OCC::Activity testNotificationActivity;
+
     static const int searchResultsReplyDelay = 100;
 
 private slots:
@@ -231,6 +233,13 @@ private slots:
         modelTester.reset(new QAbstractItemModelTester(model.data()));
 
         OCC::AccountManager::instance()->addAccount(account);
+
+        // Activity comparison is done by checking type, id, and accName
+        // We need an activity with these details, at least
+        testNotificationActivity._accName = accountState->account()->displayName();
+        testNotificationActivity._id = 1;
+        testNotificationActivity._type = OCC::Activity::NotificationType;
+        testNotificationActivity._dateTime = QDateTime::currentDateTime();
     };
 
     // Test receiving activity from server
@@ -258,11 +267,11 @@ private slots:
         QVERIFY(index.isValid());
     };
 
-    void testAddNotification(OCC::Activity activity = OCC::Activity()) {
+    void testAddNotification() {
         model->clearAll();
         QVERIFY(model->rowCount() == 0);
 
-        model->addNotificationToActivityList(activity);
+        model->addNotificationToActivityList(testNotificationActivity);
         QCOMPARE(model->rowCount(), 1);
 
         const auto index = model->index(0, 0);
@@ -282,13 +291,29 @@ private slots:
         QVERIFY(index.isValid());
     };
 
+    void testAddIgnoredFile() {
+        model->clearAll();
+        QVERIFY(model->rowCount() == 0);
+
+        OCC::Activity activity;
+        activity._folder = QStringLiteral("thingy");
+        activity._file = QStringLiteral("test.txt");
+
+        model->addIgnoredFileToList(activity);
+        // We need to add another activity to the model for the combineActivityLists method to be called
+        model->addNotificationToActivityList(testNotificationActivity);
+        QCOMPARE(model->rowCount(), 2);
+
+        const auto index = model->index(0, 0);
+        QVERIFY(index.isValid());
+    };
+
     // Test removing activity from list
     void testRemoveActivityWithRow() {
         model->clearAll();
         QVERIFY(model->rowCount() == 0);
 
-        OCC::Activity activity;
-        model->addSyncFileItemToActivityList(activity);
+        model->addNotificationToActivityList(testNotificationActivity);
         QCOMPARE(model->rowCount(), 1);
 
         model->removeActivityFromActivityList(0);
@@ -299,20 +324,15 @@ private slots:
         model->clearAll();
         QVERIFY(model->rowCount() == 0);
 
-        // Activity comparison is done by checking type, id, and accName
-        OCC::Activity activity;
-        activity._accName = QStringLiteral("Mr. Chonkers");
-        activity._id = 1;
-        activity._type = OCC::Activity::NotificationType;
-
-        testAddNotification(activity);
+        model->addNotificationToActivityList(testNotificationActivity);
         QCOMPARE(model->rowCount(), 1);
 
-        model->removeActivityFromActivityList(activity);
+        model->removeActivityFromActivityList(testNotificationActivity);
         QCOMPARE(model->rowCount(), 0);
     }
 
     // Test getting the data from the model
+
 
 };
 
