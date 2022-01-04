@@ -9,12 +9,12 @@ Item {
 
     // label value
     property string text: ""
-    
-    // font value
-    property var font: label.font
 
     // icon value
     property string imageSource: ""
+
+    // icon value hovered
+    property string imageSourceHover: ""
 
     // Tooltip value
     property string tooltipText: text
@@ -23,18 +23,11 @@ Item {
     property color textColor: Style.ncTextColor
     property color textColorHovered: Style.lightHover
 
-    // text background color
-    property color textBgColor: "transparent"
-    property color textBgColorHovered: Style.lightHover
-
     // icon background color
-    property color iconBgColor: "transparent"
-    property color iconBgColorHovered: Style.lightHover
+    property color bgColor: Style.ncBlue
 
     // text border color
     property color textBorderColor: "transparent"
-
-    property alias hovered: mouseArea.containsMouse
 
     signal clicked()
 
@@ -42,68 +35,50 @@ Item {
     Accessible.name: text !== "" ? text : (tooltipText !== "" ? tooltipText : qsTr("Activity action button"))
     Accessible.onPressAction: clicked()
 
-    // background with border around the Text
-    Rectangle {
-        visible: parent.labelVisible
-
-        anchors.fill: parent
-
-        // padding
-        anchors.topMargin: 10
-        anchors.bottomMargin: 10
-
-        border.color: parent.textBorderColor
-        border.width: 1
-
-        color: parent.hovered ? parent.textBgColorHovered : parent.textBgColor
-
-        radius: 25
-    }
-
-    // background with border around the Image
-    Rectangle {
-        visible: parent.iconVisible
-
-        anchors.fill: parent
-
-        color: parent.hovered ? parent.iconBgColorHovered : parent.iconBgColor
-    }
-
-    // label
-    Text {
-        id: label
-        visible: parent.text !== ""
-        text: parent.text
-        font: parent.font
-        color: parent.hovered ? parent.textColorHovered : parent.textColor
-        anchors.fill: parent
-        anchors.leftMargin: 10
-        anchors.rightMargin: 10
-        horizontalAlignment: Text.AlignHCenter
-        verticalAlignment: Text.AlignVCenter
-        elide: Text.ElideRight
-    }
-
-    // icon
-    Image {
-        id: icon
-        visible: parent.imageSource !== ""
-        anchors.centerIn: parent
-        source: parent.imageSource
-        sourceSize.width: visible ? 32 : 0
-        sourceSize.height: visible ? 32 : 0
-    }
-
-    MouseArea {
-        id: mouseArea
-        anchors.fill: parent
-        onClicked: parent.clicked()
-        hoverEnabled: true
-    }
-
     ToolTip {
         text: parent.tooltipText
         delay: 1000
         visible: text != "" && parent.hovered
+    }
+
+    Loader {
+        active: root.isDismissAction === true
+
+        anchors.fill: parent
+
+        sourceComponent: CustomTextButton {
+             anchors.fill: parent
+             onClicked: root.clicked()
+             text: root.text
+        }
+    }
+
+    Loader {
+        active: root.isDismissAction === false
+
+        anchors.fill: parent
+
+        sourceComponent: CustomButton {
+            id: customButton
+
+            text: root.text
+
+            anchors.fill: parent
+
+            imageSource: root.imageSource
+
+            imageSourceHover: root.imageSourceHover
+
+            textColor: root.textColor
+            textColorHovered: root.textColorHovered
+
+            textBorderColor: root.textBorderColor
+
+            bgColor: root.bgColor
+
+            tooltipText: root.tooltipText
+
+            onClicked: root.clicked()
+        }
     }
 }
