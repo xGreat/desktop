@@ -188,7 +188,7 @@ public:
 
     OCC::Activity testNotificationActivity;
 
-    static const int searchResultsReplyDelay = 100;
+    static constexpr int searchResultsReplyDelay = 100;
 
 private slots:
     void initTestCase()
