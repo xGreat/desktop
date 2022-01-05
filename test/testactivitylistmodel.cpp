@@ -25,7 +25,7 @@
 #include <QSignalSpy>
 #include <QTest>
 
-#define STARTING_ID 90000
+constexpr auto STARTING_ID = 90000;
 
 static QByteArray fake404Response = R"(
 {"ocs":{"meta":{"status":"failure","statuscode":404,"message":"Invalid query, please check the syntax. API specifications are here: http:\/\/www.freedesktop.org\/wiki\/Specifications\/open-collaboration-services.\n"},"data":[]}}
