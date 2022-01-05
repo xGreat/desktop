@@ -134,7 +134,6 @@ QVariant ActivityListModel::data(const QModelIndex &index, int role) const
         return QString();
     case PathRole:
         if (!a._file.isEmpty()) {
-            qDebug() << a._file;
             const auto folder = FolderMan::instance()->folder(a._folder);
 
             QString relPath(a._file);
