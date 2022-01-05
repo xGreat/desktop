@@ -392,13 +392,6 @@ private slots:
 
             // Unfortunately, trying to check anything relating to filepaths causes a crash
             // when the folder manager is invoked by the model to look for the relevant file
-            /* QVERIFY(index.data(OCC::ActivityListModel::ShareableRole).canConvert<bool>());
-
-            if(type == OCC::Activity::SyncFileItemType) {
-                QVERIFY(!index.data(OCC::ActivityListModel::PathRole).toString().isEmpty());
-                QVERIFY(!index.data(OCC::ActivityListModel::AbsolutePathRole).toString().isEmpty());
-                QVERIFY(!index.data(OCC::ActivityListModel::DisplayPathRole).toString().isEmpty());
-            }*/
         }
     };
 
