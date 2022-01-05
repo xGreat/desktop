@@ -90,6 +90,7 @@ public:
     Q_INVOKABLE void triggerAction(int activityIndex, int actionIndex);
 
     AccountState *accountState() const;
+    void setAccountState(AccountState *state);
 
 public slots:
     void slotRefreshActivity();
@@ -103,7 +104,6 @@ protected:
     void activitiesReceived(const QJsonDocument &json, int statusCode);
     QHash<int, QByteArray> roleNames() const override;
 
-    void setAccountState(AccountState *state);
     void setCurrentlyFetching(bool value);
     bool currentlyFetching() const;
     void setDoneFetching(bool value);
