@@ -245,7 +245,7 @@ private slots:
     // Test receiving activity from server
     void testFetchingRemoteActivity() {
         model->clearAll();
-        QVERIFY(model->rowCount() == 0);
+        QCOMPARE(model->rowCount(), 0);
 
         model->startFetchJob();
         QSignalSpy activitiesJob(model.data(), &TestingALM::activityJobStatusCode);
@@ -256,7 +256,7 @@ private slots:
     // Test receiving activity from local user action
     void testLocalSyncFileAction() {
         model->clearAll();
-        QVERIFY(model->rowCount() == 0);
+        QCOMPARE(model->rowCount(), 0);
 
         OCC::Activity activity;
 
@@ -269,7 +269,7 @@ private slots:
 
     void testAddNotification() {
         model->clearAll();
-        QVERIFY(model->rowCount() == 0);
+        QCOMPARE(model->rowCount(), 0);
 
         model->addNotificationToActivityList(testNotificationActivity);
         QCOMPARE(model->rowCount(), 1);
@@ -280,7 +280,7 @@ private slots:
 
     void testAddError() {
         model->clearAll();
-        QVERIFY(model->rowCount() == 0);
+        QCOMPARE(model->rowCount(), 0);
 
         OCC::Activity activity;
 
@@ -293,7 +293,7 @@ private slots:
 
     void testAddIgnoredFile() {
         model->clearAll();
-        QVERIFY(model->rowCount() == 0);
+        QCOMPARE(model->rowCount(), 0);
 
         OCC::Activity activity;
         activity._folder = QStringLiteral("thingy");
@@ -311,7 +311,7 @@ private slots:
     // Test removing activity from list
     void testRemoveActivityWithRow() {
         model->clearAll();
-        QVERIFY(model->rowCount() == 0);
+        QCOMPARE(model->rowCount(), 0);
 
         model->addNotificationToActivityList(testNotificationActivity);
         QCOMPARE(model->rowCount(), 1);
