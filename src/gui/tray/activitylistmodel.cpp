@@ -153,7 +153,6 @@ QVariant ActivityListModel::data(const QModelIndex &index, int role) const
             if (folder) {
                 SyncJournalFileRecord rec;
                 folder->journalDb()->getFileRecord(a._file.mid(1), &rec);
-                qDebug("FF");
                 if (rec.isValid() && (rec._isE2eEncrypted || !rec._e2eMangledName.isEmpty())) {
                     return QString();
                 }
