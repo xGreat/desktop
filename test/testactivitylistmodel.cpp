@@ -180,8 +180,6 @@ public:
     QScopedPointer<FakeQNAM> fakeQnam;
     OCC::AccountPtr account;
     QScopedPointer<OCC::AccountState> accountState;
-    TestingALM model;
-    QScopedPointer<QAbstractItemModelTester> modelTester;
 
     OCC::Activity testNotificationActivity;
 
@@ -225,10 +223,6 @@ private slots:
             return reply;
         });
 
-        model.setAccountState(accountState.data());
-
-        modelTester.reset(new QAbstractItemModelTester(&model));
-
         OCC::AccountManager::instance()->addAccount(account);
 
         // Activity comparison is done by checking type, id, and accName
@@ -241,7 +235,10 @@ private slots:
 
     // Test receiving activity from server
     void testFetchingRemoteActivity() {
-        model.clearAll();
+        TestingALM model;
+        model.setAccountState(accountState.data());
+        QScopedPointer<QAbstractItemModelTester> modelTester(new QAbstractItemModelTester(&model));
+
         QCOMPARE(model.rowCount(), 0);
 
         model.startFetchJob();
@@ -252,7 +249,10 @@ private slots:
 
     // Test receiving activity from local user action
     void testLocalSyncFileAction() {
-        model.clearAll();
+        TestingALM model;
+        model.setAccountState(accountState.data());
+        QScopedPointer<QAbstractItemModelTester> modelTester(new QAbstractItemModelTester(&model));
+
         QCOMPARE(model.rowCount(), 0);
 
         OCC::Activity activity;
@@ -265,7 +265,10 @@ private slots:
     };
 
     void testAddNotification() {
-        model.clearAll();
+        TestingALM model;
+        model.setAccountState(accountState.data());
+        QScopedPointer<QAbstractItemModelTester> modelTester(new QAbstractItemModelTester(&model));
+
         QCOMPARE(model.rowCount(), 0);
 
         model.addNotificationToActivityList(testNotificationActivity);
@@ -276,7 +279,10 @@ private slots:
     };
 
     void testAddError() {
-        model.clearAll();
+        TestingALM model;
+        model.setAccountState(accountState.data());
+        QScopedPointer<QAbstractItemModelTester> modelTester(new QAbstractItemModelTester(&model));
+
         QCOMPARE(model.rowCount(), 0);
 
         OCC::Activity activity;
@@ -289,7 +295,10 @@ private slots:
     };
 
     void testAddIgnoredFile() {
-        model.clearAll();
+        TestingALM model;
+        model.setAccountState(accountState.data());
+        QScopedPointer<QAbstractItemModelTester> modelTester(new QAbstractItemModelTester(&model));
+
         QCOMPARE(model.rowCount(), 0);
 
         OCC::Activity activity;
@@ -307,7 +316,10 @@ private slots:
 
     // Test removing activity from list
     void testRemoveActivityWithRow() {
-        model.clearAll();
+        TestingALM model;
+        model.setAccountState(accountState.data());
+        QScopedPointer<QAbstractItemModelTester> modelTester(new QAbstractItemModelTester(&model));
+
         QCOMPARE(model.rowCount(), 0);
 
         model.addNotificationToActivityList(testNotificationActivity);
@@ -318,7 +330,10 @@ private slots:
     }
 
     void testRemoveActivityWithActivity() {
-        model.clearAll();
+        TestingALM model;
+        model.setAccountState(accountState.data());
+        QScopedPointer<QAbstractItemModelTester> modelTester(new QAbstractItemModelTester(&model));
+
         QVERIFY(model.rowCount() == 0);
 
         model.addNotificationToActivityList(testNotificationActivity);
@@ -330,7 +345,10 @@ private slots:
 
     // Test getting the data from the model
     void testData() {
-        model.clearAll();
+        TestingALM model;
+        model.setAccountState(accountState.data());
+        QScopedPointer<QAbstractItemModelTester> modelTester(new QAbstractItemModelTester(&model));
+
         QVERIFY(model.rowCount() == 0);
 
         model.startFetchJob();
