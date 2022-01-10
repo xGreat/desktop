@@ -1,6 +1,5 @@
 /*
- * Copyright (C) by Roeland Jago Douma <roeland@famdouma.nl>
- * Copyright (C) 2015 by Klaas Freitag <freitag@owncloud.com>
+ * Copyright (C) 2022 by Claudio Cambra <claudio.cambra@nextcloud.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,31 +16,16 @@
 #define INTERNALLINKWIDGET_H
 
 #include "accountfwd.h"
-#include "sharepermissions.h"
+
 #include "QProgressIndicator.h"
-#include <QDialog>
-#include <QSharedPointer>
 #include <QList>
 #include <QToolButton>
-#include <QHBoxLayout>
-#include <QLabel>
-#include <QLineEdit>
-#include <QWidgetAction>
-
-class QMenu;
-class QTableWidgetItem;
 
 namespace OCC {
 
 namespace Ui {
     class InternalLinkWidget;
 }
-
-class AbstractCredentials;
-class SyncResult;
-class LinkShare;
-class Share;
-class ElidedLabel;
 
 /**
  * @brief The ShareDialog class
@@ -53,7 +37,6 @@ class InternalLinkWidget : public QWidget
 
 public:
     explicit InternalLinkWidget(AccountPtr account,
-        const QString &sharePath,
         const QString &localPath,
         QWidget *parent = nullptr);
     ~InternalLinkWidget() override;
@@ -69,13 +52,10 @@ private slots:
     void slotCopyInternalLink(const bool clicked) const;
 
 private:
-    void displayError(const QString &errMsg);
-
     void customizeStyle();
 
     Ui::InternalLinkWidget *_ui;
     AccountPtr _account;
-    QString _sharePath;
     QString _localPath;
     QString _internalUrl;
 

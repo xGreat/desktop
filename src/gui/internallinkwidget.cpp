@@ -1,6 +1,5 @@
 /*
- * Copyright (C) by Roeland Jago Douma <roeland@famdouma.nl>
- * Copyright (C) 2015 by Klaas Freitag <freitag@owncloud.com>
+ * Copyright (C) 2022 by Claudio Cambra <claudio.cambra@nextcloud.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,35 +14,24 @@
 
 #include "ui_internallinkwidget.h"
 #include "internallinkwidget.h"
-#include "account.h"
 #include "accountstate.h"
 #include "folderman.h"
 #include "theme.h"
-#include "elidedlabel.h"
 
 #include "QProgressIndicator.h"
-#include <QBuffer>
 #include <QClipboard>
-#include <QFileInfo>
-#include <QDesktopServices>
-#include <QMessageBox>
-#include <QMenu>
-#include <QTextEdit>
 #include <QToolButton>
-#include <QPropertyAnimation>
 
 namespace OCC {
 
 Q_LOGGING_CATEGORY(lcInternalLink, "nextcloud.gui.internaklink", QtInfoMsg)
 
 InternalLinkWidget::InternalLinkWidget(AccountPtr account,
-    const QString &sharePath,
     const QString &localPath,
     QWidget *parent)
     : QWidget(parent)
     , _ui(new Ui::InternalLinkWidget)
     , _account(account)
-    , _sharePath(sharePath)
     , _localPath(localPath)
 {
     _ui->setupUi(this);
@@ -73,14 +61,6 @@ InternalLinkWidget::InternalLinkWidget(AccountPtr account,
     _ui->internalLinkProgressIndicator->startAnimation();
 
     connect(_ui->copyInternalLinkButton, &QPushButton::clicked, this, &InternalLinkWidget::slotCopyInternalLink);
-
-    _ui->errorLabel->hide();
-
-    // check if the file is already inside of a synced folder
-    if (sharePath.isEmpty()) {
-        qCWarning(lcInternalLink) << "Unable to share files not in a sync folder.";
-        return;
-    }
 }
 
 InternalLinkWidget::~InternalLinkWidget()
@@ -106,12 +86,6 @@ void InternalLinkWidget::slotCopyInternalLink(const bool clicked) const
     Q_UNUSED(clicked);
 
     QApplication::clipboard()->setText(_internalUrl);
-}
-
-void InternalLinkWidget::displayError(const QString &errMsg)
-{
-    _ui->errorLabel->setText(errMsg);
-    _ui->errorLabel->show();
 }
 
 void InternalLinkWidget::slotStyleChanged()
