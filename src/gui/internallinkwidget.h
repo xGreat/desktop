@@ -65,6 +65,7 @@ public slots:
     void slotStyleChanged();
 
 private slots:
+    void slotLinkFetched(const QString &url);
     void slotCopyInternalLink(const bool clicked) const;
 
 private:
@@ -76,7 +77,7 @@ private:
     AccountPtr _account;
     QString _sharePath;
     QString _localPath;
-    QString _shareUrl;
+    QString _internalUrl;
 
     bool _isFile;
 

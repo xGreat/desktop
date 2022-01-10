@@ -16,9 +16,8 @@
 #include "ui_internallinkwidget.h"
 #include "internallinkwidget.h"
 #include "account.h"
-#include "capabilities.h"
-#include "guiutility.h"
-#include "sharemanager.h"
+#include "accountstate.h"
+#include "folderman.h"
 #include "theme.h"
 #include "elidedlabel.h"
 
@@ -53,6 +52,26 @@ InternalLinkWidget::InternalLinkWidget(AccountPtr account,
     QFileInfo fi(localPath);
     _isFile = fi.isFile();
 
+    const auto folder = FolderMan::instance()->folderForPath(localPath);
+    const auto folderRelativePath = localPath.mid(folder->cleanPath().length() + 1);
+    const auto serverRelativePath = QDir(folder->remotePath()).filePath(folderRelativePath);
+
+    SyncJournalFileRecord record;
+    if (folder)
+        folder->journalDb()->getFileRecord(folderRelativePath, &record);
+
+    const auto bindLinkSlot = std::bind(&InternalLinkWidget::slotLinkFetched, this, std::placeholders::_1);
+    fetchPrivateLinkUrl(
+        folder->accountState()->account(),
+        serverRelativePath,
+        record.numericFileId(),
+        this,
+        bindLinkSlot);
+
+    _ui->copyInternalLinkButton->setEnabled(false);
+    _ui->internalLinkProgressIndicator->setVisible(true);
+    _ui->internalLinkProgressIndicator->startAnimation();
+
     connect(_ui->copyInternalLinkButton, &QPushButton::clicked, this, &InternalLinkWidget::slotCopyInternalLink);
 
     _ui->errorLabel->hide();
@@ -74,11 +93,19 @@ void InternalLinkWidget::setupUiOptions()
     customizeStyle();
 }
 
+void InternalLinkWidget::slotLinkFetched(const QString &url)
+{
+    _internalUrl = url;
+    _ui->copyInternalLinkButton->setEnabled(true);
+    _ui->internalLinkProgressIndicator->setVisible(false);
+    _ui->internalLinkProgressIndicator->stopAnimation();
+}
+
 void InternalLinkWidget::slotCopyInternalLink(const bool clicked) const
 {
     Q_UNUSED(clicked);
 
-    //QApplication::clipboard()->setText(_linkInternal->getLink().toString());
+    QApplication::clipboard()->setText(_internalUrl);
 }
 
 void InternalLinkWidget::displayError(const QString &errMsg)
