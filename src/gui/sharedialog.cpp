@@ -16,6 +16,7 @@
 #include "sharedialog.h"
 #include "sharee.h"
 #include "sharelinkwidget.h"
+#include "internallinkwidget.h"
 #include "shareusergroupwidget.h"
 
 #include "sharemanager.h"
@@ -150,6 +151,9 @@ ShareDialog::ShareDialog(QPointer<AccountState> accountState,
         connect(_manager, &ShareManager::linkShareCreated, this, &ShareDialog::slotAddLinkShareWidget);
         connect(_manager, &ShareManager::linkShareRequiresPassword, this, &ShareDialog::slotLinkShareRequiresPassword);
     }
+
+    _internalLinkWidget = new InternalLinkWidget(_accountState->account(), _sharePath, _localPath, this);
+    _ui->verticalLayout->insertWidget(_linkWidgetList.size()+1, _internalLinkWidget);
 }
 
 ShareLinkWidget *ShareDialog::addLinkShareWidget(const QSharedPointer<LinkShare> &linkShare)
