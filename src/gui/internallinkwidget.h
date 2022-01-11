@@ -15,8 +15,6 @@
 #ifndef INTERNALLINKWIDGET_H
 #define INTERNALLINKWIDGET_H
 
-#include "accountfwd.h"
-
 #include "QProgressIndicator.h"
 #include <QList>
 #include <QToolButton>
@@ -36,16 +34,11 @@ class InternalLinkWidget : public QWidget
     Q_OBJECT
 
 public:
-    explicit InternalLinkWidget(AccountPtr account,
-        const QString &localPath,
+    explicit InternalLinkWidget(const QString &localPath,
         QWidget *parent = nullptr);
     ~InternalLinkWidget() override;
 
-    void toggleButton(bool show);
     void setupUiOptions();
-
-public slots:
-    void slotStyleChanged();
 
 private slots:
     void slotLinkFetched(const QString &url);
@@ -55,11 +48,8 @@ private:
     void customizeStyle();
 
     Ui::InternalLinkWidget *_ui;
-    AccountPtr _account;
     QString _localPath;
     QString _internalUrl;
-
-    bool _isFile;
 
     QPushButton *_copyInternalLinkButton{};
 };

@@ -24,31 +24,24 @@
 
 namespace OCC {
 
-Q_LOGGING_CATEGORY(lcInternalLink, "nextcloud.gui.internaklink", QtInfoMsg)
+Q_LOGGING_CATEGORY(lcInternalLink, "nextcloud.gui.internalink", QtInfoMsg)
 
-InternalLinkWidget::InternalLinkWidget(AccountPtr account,
-    const QString &localPath,
+InternalLinkWidget::InternalLinkWidget(const QString &localPath,
     QWidget *parent)
     : QWidget(parent)
     , _ui(new Ui::InternalLinkWidget)
-    , _account(account)
     , _localPath(localPath)
 {
     _ui->setupUi(this);
 
-    //Is this a file or folder?
-    QFileInfo fi(localPath);
-    _isFile = fi.isFile();
-
-    const auto folder = FolderMan::instance()->folderForPath(localPath);
-    const auto folderRelativePath = localPath.mid(folder->cleanPath().length() + 1);
+    const auto folder = FolderMan::instance()->folderForPath(_localPath);
+    const auto folderRelativePath = _localPath.mid(folder->cleanPath().length() + 1);
     const auto serverRelativePath = QDir(folder->remotePath()).filePath(folderRelativePath);
 
     SyncJournalFileRecord record;
-    if (folder)
-        folder->journalDb()->getFileRecord(folderRelativePath, &record);
 
     const auto bindLinkSlot = std::bind(&InternalLinkWidget::slotLinkFetched, this, std::placeholders::_1);
+
     fetchPrivateLinkUrl(
         folder->accountState()->account(),
         serverRelativePath,
@@ -86,11 +79,6 @@ void InternalLinkWidget::slotCopyInternalLink(const bool clicked) const
     Q_UNUSED(clicked);
 
     QApplication::clipboard()->setText(_internalUrl);
-}
-
-void InternalLinkWidget::slotStyleChanged()
-{
-    customizeStyle();
 }
 
 void InternalLinkWidget::customizeStyle()

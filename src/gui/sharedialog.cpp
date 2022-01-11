@@ -152,7 +152,7 @@ ShareDialog::ShareDialog(QPointer<AccountState> accountState,
         connect(_manager, &ShareManager::linkShareRequiresPassword, this, &ShareDialog::slotLinkShareRequiresPassword);
     }
 
-    _internalLinkWidget = new InternalLinkWidget(_accountState->account(), _localPath, this);
+    _internalLinkWidget = new InternalLinkWidget(localPath, this);
     _ui->verticalLayout->insertWidget(_linkWidgetList.size()+1, _internalLinkWidget);
 }
 
