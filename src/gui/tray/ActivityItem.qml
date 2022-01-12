@@ -229,18 +229,19 @@ MouseArea {
                     onClicked: parent.clicked()
                 }
 
-                onClicked:  moreActionsButtonContextMenu.popup();
+                onClicked:  moreActionsButtonContextMenuContainer.open();
 
                 Connections {
                     target: flickable
 
                     function onMovementStarted() {
-                        moreActionsButtonContextMenu.close();
+                        moreActionsButtonContextMenuContainer.close();
                     }
                 }
 
-                Container {
+                ActivityItemContextMenu {
                     id: moreActionsButtonContextMenuContainer
+
                     visible: moreActionsButtonContextMenu.opened
 
                     width: moreActionsButtonContextMenu.width
@@ -248,47 +249,14 @@ MouseArea {
                     anchors.right: moreActionsButton.right
                     anchors.top: moreActionsButton.top
 
-                    Menu {
-                        id: moreActionsButtonContextMenu
-                        anchors.centerIn: parent
+                    maxActionButtons: activityMouseArea.maxActionButtons
+                    activityItemLinks: activityItem.links
 
-                        // transform model to contain indexed actions with primary action filtered out
-                        function actionListToContextMenuList(actionList) {
-                            // early out with non-altered data
-                            if (activityItem.links.length <= maxActionButtons) {
-                                return actionList;
-                            }
-
-                            // add index to every action and filter 'primary' action out
-                            var reducedActionList = actionList.reduce(function(reduced, action, index) {
-                                if (!action.primary) {
-                                    var actionWithIndex = { actionIndex: index, label: action.label };
-                                    reduced.push(actionWithIndex);
-                                }
-                                return reduced;
-                            }, []);
-
-
-                            return reducedActionList;
-                        }
-
-                        MenuItem {
-                            text: qsTr("View activity")
-                            onClicked: fileActivityButtonClicked(absolutePath)
-                        }
-
-                        Repeater {
-                            id: moreActionsButtonContextMenuRepeater
-
-                            model: moreActionsButtonContextMenu.actionListToContextMenuList(activityItem.links)
-
-                            delegate: MenuItem {
-                                id: moreActionsButtonContextMenuEntry
-                                text: model.modelData.label
-                                onTriggered: activityModel.triggerAction(activityItem.itemIndex, model.modelData.actionIndex)
-                            }
-                        }
+                    onMenuEntryTriggered: function(entryIndex) {
+                        activityModel.triggerAction(activityItem.itemIndex, entryIndex)
                     }
+
+                    onFileActivityButtonClicked: activityMouseArea.fileActivityButtonClicked(absolutePath)
                 }
             }
         }
