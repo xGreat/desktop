@@ -21,7 +21,7 @@ Item {
     property string imageSourceHover: ""
 
     // Tooltip value
-    property string tooltipText: text
+    property string tooltipText: ""
 
     // text color
     property color textColor: Style.ncTextColor
@@ -88,11 +88,16 @@ Item {
                 Layout.fillWidth: true
                 Layout.rightMargin: 10
             }
+
             ToolTip {
-                text: parent.tooltipText
+                text: root.tooltipText
                 delay: 1000
-                visible: text != "" && parent.hovered
+                visible: root.tooltipText != "" && root.hovered
             }
+
+            Accessible.role: Accessible.Button
+            Accessible.name: root.text !== "" ? root.text : (root.tooltipText !== "" ? root.tooltipText : qsTr("Activity action button"))
+            Accessible.onPressAction: root.clicked()
 
         }
     }
@@ -100,7 +105,7 @@ Item {
     MouseArea {
         id: mouseArea
         anchors.fill: buttonBackground
-        onClicked: parent.clicked()
+        onClicked: root.clicked()
         hoverEnabled: true
     }
 }

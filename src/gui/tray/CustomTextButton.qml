@@ -17,7 +17,7 @@ Item {
     property string imageSourceHover: ""
 
     // Tooltip value
-    property string tooltipText: text
+    property string tooltipText: ""
 
     // text color
     property color textColor: Style.unifiedSearchResulSublineColor
@@ -38,7 +38,7 @@ Item {
     signal clicked()
 
     Accessible.role: Accessible.Button
-    Accessible.name: text !== "" ? text : (tooltipText !== "" ? tooltipText : qsTr("Activity action button"))
+    Accessible.name: root.text !== "" ? root.text : (root.tooltipText !== "" ? root.tooltipText : qsTr("Activity action button"))
     Accessible.onPressAction: clicked()
 
     Label {
@@ -54,9 +54,9 @@ Item {
     }
 
     ToolTip {
-        text: parent.tooltipText
+        text: root.tooltipText
         delay: 1000
-        visible: text != "" && parent.hovered
+        visible: root.tooltipText != "" && root.hovered
     }
 
     MouseArea {

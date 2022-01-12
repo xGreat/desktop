@@ -96,71 +96,6 @@ MouseArea {
                     color: "#808080"
                 }
             }
-        }
-        RowLayout {
-            id: activityActionsLayout
-            Layout.preferredHeight: Style.trayWindowHeaderHeight
-            Layout.leftMargin: 20
-            Layout.fillHeight: true
-
-            spacing: 20
-
-            function actionButtonIcon(actionIndex, color) {
-                const verb = String(model.links[actionIndex].verb);
-                if (verb === "WEB" && (model.objectType === "chat" || model.objectType === "call")) {
-                    return "image://svgimage-custom-color/reply.svg" + "/" + color;
-                } else if (verb === "DELETE") {
-                    return "image://svgimage-custom-color/close.svg" + "/" + color;
-                }
-
-                return "image://svgimage-custom-color/confirm.svg" + "/" + color;
-            }
-
-            function actionButtonText(actionIndex) {
-                const verb = String(model.links[actionIndex].verb);
-                if (verb === "DELETE") {
-                    return qsTr("Mark as read")
-                } else if (verb === "WEB" && (model.objectType === "chat" || model.objectType !== "call")) {
-                    return qsTr("Reply")
-                }
-
-                return model.links[actionIndex].label;
-            }
-
-            Repeater {
-                model: activityItem.links.length > maxActionButtons ? 1 : activityItem.links.length
-
-                ActivityActionButton {
-                    id: activityActionButton
-
-                    readonly property int actionIndex: model.index
-                    readonly property bool primary: model.index === 0 && String(activityItem.links[actionIndex].verb) !== "DELETE"
-
-                    readonly property bool isDismissAction: String(activityItem.links[actionIndex].verb) === "DELETE"
-
-                    Layout.fillHeight: true
-
-                    text: activityActionsLayout.actionButtonText(actionIndex)
-
-                    imageSource: activityActionsLayout.actionButtonIcon(actionIndex, Style.ncBlue)
-
-                    imageSourceHover: activityActionsLayout.actionButtonIcon(actionIndex, Style.ncTextColor)
-
-                    textColor: primary ? Style.ncBlue : "black"
-                    textColorHovered: Style.lightHover
-
-                    tooltipText: activityItem.links[actionIndex].label
-
-                    Layout.minimumWidth: primary ? 100 : 80
-                    Layout.minimumHeight: parent.height
-
-                    Layout.preferredWidth: primary ? -1 : parent.height
-
-                    onClicked: activityModel.triggerAction(activityItem.itemIndex, actionIndex)
-                }
-
-            }
-
             CustomButton {
                 id: shareButton
 
@@ -184,80 +119,29 @@ MouseArea {
                 Accessible.name: qsTr("Share %1").arg(displayPath)
                 Accessible.onPressAction: shareButton.clicked()
             }
+        }
 
-            Rectangle {
-                id: moreActionsButton
+        ActivityItemActions {
+            id: activityActionsLayout
+            Layout.preferredHeight: Style.trayWindowHeaderHeight
+            Layout.leftMargin: 20
+            Layout.fillHeight: true
 
-                color: activityHover.color
+            activityActionLinks: model.links
+            objectType: model.objectType
+            moreActionsButtonColor: activityHover.color
+            maxActionButtons: activityMouseArea.maxActionButtons
+            displayActions: model.displayActions
+            flickable: activityMouseArea.flickable
+            path: model.path
+            absolutePath: model.absolutePath
 
-                Rectangle {
-                    id: mouseAreaHover
-                    color: moreActionsButtonMouseArea.containsMouse ? "white" : moreActionsButton.color
-                    anchors.fill: moreActionsButtonIcon
-                }
+            onTriggerAction: function(actionIndex) {
+                root.triggerAction(activityItem.itemIndex, actionIndex)
+            }
 
-                Layout.preferredWidth: 32
-                Layout.minimumWidth: 32
-                Layout.fillHeight: true
-
-                signal clicked()
-
-                Image {
-                    id: moreActionsButtonIcon
-                    source: "qrc:///client/theme/more.svg"
-                    sourceSize.width: 24
-                    sourceSize.height: 24
-                    width: 24
-                    height: 24
-                    anchors.centerIn: parent
-                }
-
-                visible: displayActions && ((path !== "") || (activityItem.links.length > maxActionButtons))
-
-                ToolTip.visible: hovered
-                ToolTip.delay: Qt.styleHints.mousePressAndHoldInterval
-                ToolTip.text: qsTr("Show more actions")
-
-                Accessible.role: Accessible.Button
-                Accessible.name: qsTr("Show more actions")
-                Accessible.onPressAction: moreActionsButton.clicked()
-
-                MouseArea {
-                    id: moreActionsButtonMouseArea
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    onClicked: parent.clicked()
-                }
-
-                onClicked:  moreActionsButtonContextMenuContainer.open();
-
-                Connections {
-                    target: flickable
-
-                    function onMovementStarted() {
-                        moreActionsButtonContextMenuContainer.close();
-                    }
-                }
-
-                ActivityItemContextMenu {
-                    id: moreActionsButtonContextMenuContainer
-
-                    visible: moreActionsButtonContextMenu.opened
-
-                    width: moreActionsButtonContextMenu.width
-                    height: moreActionsButtonContextMenu.height
-                    anchors.right: moreActionsButton.right
-                    anchors.top: moreActionsButton.top
-
-                    maxActionButtons: activityMouseArea.maxActionButtons
-                    activityItemLinks: activityItem.links
-
-                    onMenuEntryTriggered: function(entryIndex) {
-                        activityModel.triggerAction(activityItem.itemIndex, entryIndex)
-                    }
-
-                    onFileActivityButtonClicked: activityMouseArea.fileActivityButtonClicked(absolutePath)
-                }
+            onFileActivityButtonClicked: function(absolutePath) {
+                activityMouseArea.fileActivityButtonClicked(absolutePath)
             }
         }
     }

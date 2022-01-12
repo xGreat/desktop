@@ -17,7 +17,7 @@ Item {
     property string imageSourceHover: ""
 
     // Tooltip value
-    property string tooltipText: text
+    property string tooltipText: ""
 
     // text color
     property color textColor: Style.ncTextColor
@@ -31,16 +31,6 @@ Item {
 
     signal clicked()
 
-    Accessible.role: Accessible.Button
-    Accessible.name: text !== "" ? text : (tooltipText !== "" ? tooltipText : qsTr("Activity action button"))
-    Accessible.onPressAction: clicked()
-
-    ToolTip {
-        text: parent.tooltipText
-        delay: 1000
-        visible: text != "" && parent.hovered
-    }
-
     Loader {
         active: root.isDismissAction === true
 
@@ -50,6 +40,7 @@ Item {
              anchors.fill: parent
              onClicked: root.clicked()
              text: root.text
+             tooltipText: root.tooltipText
         }
     }
 
