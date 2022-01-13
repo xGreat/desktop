@@ -27,5 +27,6 @@
         <file>src/gui/tray/CustomTextButton.qml</file>
         <file>src/gui/tray/ActivityItemContextMenu.qml</file>
         <file>src/gui/tray/ActivityItemActions.qml</file>
+        <file>src/gui/tray/ActivityItemContent.qml</file>
     </qresource>
 </RCC>
