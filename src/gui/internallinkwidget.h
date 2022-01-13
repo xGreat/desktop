@@ -17,13 +17,11 @@
 
 #include "QProgressIndicator.h"
 #include <QList>
-#include <QToolButton>
+#include <QPushButton>
+
+#include "ui_internallinkwidget.h"
 
 namespace OCC {
-
-namespace Ui {
-    class InternalLinkWidget;
-}
 
 /**
  * @brief The ShareDialog class
@@ -36,18 +34,14 @@ class InternalLinkWidget : public QWidget
 public:
     explicit InternalLinkWidget(const QString &localPath,
         QWidget *parent = nullptr);
-    ~InternalLinkWidget() override;
-
-    void setupUiOptions();
+    ~InternalLinkWidget() = default;
 
 private slots:
     void slotLinkFetched(const QString &url);
     void slotCopyInternalLink(const bool clicked) const;
 
 private:
-    void customizeStyle();
-
-    Ui::InternalLinkWidget *_ui;
+    std::unique_ptr<Ui::InternalLinkWidget> _ui;
     QString _localPath;
     QString _internalUrl;
 

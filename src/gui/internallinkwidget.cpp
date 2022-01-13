@@ -12,7 +12,6 @@
  * for more details.
  */
 
-#include "ui_internallinkwidget.h"
 #include "internallinkwidget.h"
 #include "accountstate.h"
 #include "folderman.h"
@@ -20,7 +19,6 @@
 
 #include "QProgressIndicator.h"
 #include <QClipboard>
-#include <QToolButton>
 
 namespace OCC {
 
@@ -56,16 +54,6 @@ InternalLinkWidget::InternalLinkWidget(const QString &localPath,
     connect(_ui->copyInternalLinkButton, &QPushButton::clicked, this, &InternalLinkWidget::slotCopyInternalLink);
 }
 
-InternalLinkWidget::~InternalLinkWidget()
-{
-    delete _ui;
-}
-
-void InternalLinkWidget::setupUiOptions()
-{
-    customizeStyle();
-}
-
 void InternalLinkWidget::slotLinkFetched(const QString &url)
 {
     _internalUrl = url;
@@ -79,14 +67,6 @@ void InternalLinkWidget::slotCopyInternalLink(const bool clicked) const
     Q_UNUSED(clicked);
 
     QApplication::clipboard()->setText(_internalUrl);
-}
-
-void InternalLinkWidget::customizeStyle()
-{
-    _ui->copyInternalLinkButton->setIcon(Theme::createColorAwareIcon(":/client/theme/copy.svg"));
-
-    const auto externalIcon = Theme::createColorAwareIcon(":/client/theme/external.svg");
-    _ui->internalLinkIconLabel->setPixmap(externalIcon.pixmap(externalIcon.actualSize(_ui->internalLinkIconLabel->size())));
 }
 
 }
