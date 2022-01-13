@@ -8,21 +8,7 @@ import com.nextcloud.desktopclient 1.0
 RowLayout {
     id: root
 
-    property variant links: []
-
-    property int itemIndex: 0
-
-    property string displayPath: ""
-
-    property string message: ""
-
-    property string subject: ""
-
-    property string dateTime: ""
-
-    property string type: ""
-
-    property bool isShareable: false
+    property variant activityData: ({})
 
     property color activityTextTitleColor: Style.ncTextColor
 
@@ -55,18 +41,18 @@ RowLayout {
 
         Text {
             id: activityTextTitle
-            text: (root.type === "Activity" || root.type === "Notification") ? root.subject : root.message
+            text: (root.activityData.type === "Activity" || root.activityData.type === "Notification") ? root.activityData.subject : root.activityData.message
             width: parent.width
             elide: Text.ElideRight
             font.pixelSize: Style.topLinePixelSize
-            color: activityTextTitleColor
+            color: root.activityData.activityTextTitleColor
         }
 
         Text {
             id: activityTextInfo
-            text: (root.type === "Sync") ? root.displayPath
-                                    : (root.type === "File") ? root.subject
-                                                        : (root.type === "Notification") ? root.message
+            text: (root.activityData.type === "Sync") ? root.activityData.displayPath
+                                    : (root.activityData.type === "File") ? root.activityData.subject
+                                                        : (root.activityData.type === "Notification") ? root.activityData.message
                                                                                     : ""
             height: (text === "") ? 0 : activityTextTitle.height
             width: parent.width
@@ -76,7 +62,7 @@ RowLayout {
 
         Text {
             id: activityTextDateTime
-            text: root.dateTime
+            text: root.activityData.dateTime
             height: (text === "") ? 0 : activityTextTitle.height
             width: parent.width
             elide: Text.ElideRight
@@ -87,7 +73,7 @@ RowLayout {
     CustomButton {
         id: shareButton
 
-        visible: isShareable
+        visible: root.activityData.isShareable
 
         imageSource: "image://svgimage-custom-color/share.svg" + "/" + Style.ncBlue
 
@@ -104,7 +90,7 @@ RowLayout {
         onClicked: root.shareButtonClicked()
 
         Accessible.role: Accessible.Button
-        Accessible.name: qsTr("Share %1").arg(root.displayPath)
+        Accessible.name: qsTr("Share %1").arg(root.activityData.displayPath)
         Accessible.onPressAction: shareButton.clicked()
     }
 }

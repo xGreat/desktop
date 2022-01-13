@@ -32,23 +32,7 @@ MouseArea {
         ActivityItemContent {
             id: activityContent
 
-            links: model.links
-
-            itemIndex: model.index
-
-            displayPath: model.displayPath
-
-            message: model.message
-
-            subject: model.subject
-
-            dateTime: model.dateTime
-
-            type: model.type
-
-            isShareable: model.isShareable
-
-            activityTextTitleColor: model.activityTextTitleColor
+            activityData: model
 
             onClicked: activityMouseArea.clicked()
 
@@ -58,8 +42,8 @@ MouseArea {
             Layout.preferredHeight: Style.trayWindowHeaderHeight
 
             Accessible.role: Accessible.ListItem
-            Accessible.name: path !== "" ? qsTr("Open %1 locally").arg(displayPath)
-                                         : message
+            Accessible.name: path !== "" ? qsTr("Open %1 locally").arg(model.displayPath)
+                                         : model.message
             Accessible.onPressAction: activityMouseArea.clicked()
         }
 
@@ -69,14 +53,11 @@ MouseArea {
             Layout.leftMargin: 20
             Layout.fillHeight: true
 
-            activityActionLinks: model.links
-            objectType: model.objectType
+            activityData: model
+
             moreActionsButtonColor: activityHover.color
             maxActionButtons: activityMouseArea.maxActionButtons
-            displayActions: model.displayActions
             flickable: activityMouseArea.flickable
-            path: model.path
-            absolutePath: model.absolutePath
 
             onTriggerAction: function(actionIndex) {
                 activityModel.triggerAction(model.index, actionIndex)

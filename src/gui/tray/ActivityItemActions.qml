@@ -8,19 +8,11 @@ import com.nextcloud.desktopclient 1.0
 RowLayout {
     id: root
 
-    property var activityActionLinks: []
-
-    property string objectType: ""
+    property variant activityData: ({})
 
     property color moreActionsButtonColor: "white"
 
     property int maxActionButtons: 0
-
-    property bool displayActions: false
-
-    property string path: ""
-
-    property string absolutePath: ""
 
     property Flickable flickable: Flickable{}
 
@@ -30,8 +22,8 @@ RowLayout {
     spacing: 20
 
     function actionButtonIcon(actionIndex, color) {
-        const verb = String(root.activityActionLinks[actionIndex].verb);
-        if (verb === "WEB" && (root.objectType === "chat" || root.objectType === "call")) {
+        const verb = String(root.activityData.links[actionIndex].verb);
+        if (verb === "WEB" && (root.activityData.objectType === "chat" || root.activityData.objectType === "call")) {
             return "image://svgimage-custom-color/reply.svg" + "/" + color;
         } else if (verb === "DELETE") {
             return "image://svgimage-custom-color/close.svg" + "/" + color;
@@ -41,26 +33,26 @@ RowLayout {
     }
 
     function actionButtonText(actionIndex) {
-        const verb = String(root.activityActionLinks[actionIndex].verb);
+        const verb = String(root.activityData.links[actionIndex].verb);
         if (verb === "DELETE") {
             return qsTr("Mark as read")
-        } else if (verb === "WEB" && (root.objectType === "chat" || root.objectType !== "call")) {
+        } else if (verb === "WEB" && (root.activityData.objectType === "chat" || root.activityData.objectType !== "call")) {
             return qsTr("Reply")
         }
 
-        return root.activityActionLinks[actionIndex].label;
+        return root.activityData.links[actionIndex].label;
     }
 
     Repeater {
-        model: root.activityActionLinks.length > root.maxActionButtons ? 1 : root.activityActionLinks.length
+        model: root.activityData.links.length > root.maxActionButtons ? 1 : root.activityData.links.length
 
         ActivityActionButton {
             id: activityActionButton
 
             readonly property int actionIndex: model.index
-            readonly property bool primary: model.index === 0 && String(root.activityActionLinks[actionIndex].verb) !== "DELETE"
+            readonly property bool primary: model.index === 0 && String(root.activityData.links[actionIndex].verb) !== "DELETE"
 
-            readonly property bool isDismissAction: String(root.activityActionLinks[actionIndex].verb) === "DELETE"
+            readonly property bool isDismissAction: String(root.activityData.links[actionIndex].verb) === "DELETE"
 
             Layout.fillHeight: true
 
@@ -73,7 +65,7 @@ RowLayout {
             textColor: primary ? Style.ncBlue : "black"
             textColorHovered: Style.lightHover
 
-            tooltipText: root.activityActionLinks[actionIndex].label
+            tooltipText: root.activityData.links[actionIndex].label
 
             Layout.minimumWidth: primary ? 100 : 80
             Layout.minimumHeight: parent.height
@@ -115,7 +107,7 @@ RowLayout {
             anchors.centerIn: parent
         }
 
-        visible: root.displayActions && ((root.path !== "") || (root.activityActionLinks.length > root.maxActionButtons))
+        visible: root.activityData.displayActions && ((root.activityData.path !== "") || (root.activityData.links.length > root.maxActionButtons))
 
         ToolTip.visible: hovered
         ToolTip.delay: Qt.styleHints.mousePressAndHoldInterval
@@ -153,13 +145,13 @@ RowLayout {
             anchors.top: moreActionsButton.top
 
             maxActionButtons: root.maxActionButtons
-            activityItemLinks: root.activityActionLinks
+            activityItemLinks: root.activityData.links
 
             onMenuEntryTriggered: function(entryIndex) {
                 root.triggerAction(entryIndex)
             }
 
-            onFileActivityButtonClicked: root.fileActivityButtonClicked(root.absolutePath)
+            onFileActivityButtonClicked: root.fileActivityButtonClicked(root.activityData.absolutePath)
         }
     }
 }
