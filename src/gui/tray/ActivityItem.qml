@@ -12,7 +12,7 @@ MouseArea {
     property Flickable flickable
 
 
-    height: (model.links.length > 0) ? Style.trayWindowHeaderHeight * 2 : Style.trayWindowHeaderHeight
+    height: (model.links.length > 0 || model.path !== "") ? Style.trayWindowHeaderHeight * 2 : Style.trayWindowHeaderHeight
 
     signal fileActivityButtonClicked(string absolutePath)
 
