@@ -144,8 +144,9 @@ ShareDialog::ShareDialog(QPointer<AccountState> accountState,
     _scrollAreaLayout->setContentsMargins(0, 0, 0, 0);
     _ui->scrollArea->setWidget(_scrollAreaViewPort);
 
+
     _internalLinkWidget = new InternalLinkWidget(localPath, this);
-    _ui->verticalLayout->insertWidget(_linkWidgetList.size()+1, _internalLinkWidget);
+    _ui->verticalLayout->addWidget(_internalLinkWidget);
 }
 
 ShareLinkWidget *ShareDialog::addLinkShareWidget(const QSharedPointer<LinkShare> &linkShare)
