@@ -52,6 +52,8 @@ MouseArea {
 
             onClicked: activityMouseArea.clicked()
 
+            onShareButtonClicked: Systray.openShareDialog(model.displayPath, model.absolutePath)
+
             Layout.fillWidth: true
             Layout.preferredHeight: Style.trayWindowHeaderHeight
 
@@ -77,7 +79,7 @@ MouseArea {
             absolutePath: model.absolutePath
 
             onTriggerAction: function(actionIndex) {
-                model.triggerAction(model.index, actionIndex)
+                activityModel.triggerAction(model.index, actionIndex)
             }
 
             onFileActivityButtonClicked: function(absolutePath) {

@@ -28,6 +28,8 @@ RowLayout {
 
     signal clicked()
 
+    signal shareButtonClicked()
+
     spacing: 0
 
     Image {
@@ -99,7 +101,7 @@ RowLayout {
         Layout.minimumHeight: parent.height
         Layout.preferredWidth: -1
 
-        onClicked: root.clicked()
+        onClicked: root.shareButtonClicked()
 
         Accessible.role: Accessible.Button
         Accessible.name: qsTr("Share %1").arg(root.displayPath)
