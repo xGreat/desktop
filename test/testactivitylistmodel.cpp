@@ -237,7 +237,7 @@ private slots:
     void testFetchingRemoteActivity() {
         TestingALM model;
         model.setAccountState(accountState.data());
-        QScopedPointer<QAbstractItemModelTester> modelTester(new QAbstractItemModelTester(&model));
+        QAbstractItemModelTester modelTester(&model);
 
         QCOMPARE(model.rowCount(), 0);
 
@@ -251,7 +251,7 @@ private slots:
     void testLocalSyncFileAction() {
         TestingALM model;
         model.setAccountState(accountState.data());
-        QScopedPointer<QAbstractItemModelTester> modelTester(new QAbstractItemModelTester(&model));
+        QAbstractItemModelTester modelTester(&model);
 
         QCOMPARE(model.rowCount(), 0);
 
@@ -267,7 +267,7 @@ private slots:
     void testAddNotification() {
         TestingALM model;
         model.setAccountState(accountState.data());
-        QScopedPointer<QAbstractItemModelTester> modelTester(new QAbstractItemModelTester(&model));
+        QAbstractItemModelTester modelTester(&model);
 
         QCOMPARE(model.rowCount(), 0);
 
@@ -281,7 +281,7 @@ private slots:
     void testAddError() {
         TestingALM model;
         model.setAccountState(accountState.data());
-        QScopedPointer<QAbstractItemModelTester> modelTester(new QAbstractItemModelTester(&model));
+        QAbstractItemModelTester modelTester(&model);
 
         QCOMPARE(model.rowCount(), 0);
 
@@ -297,7 +297,7 @@ private slots:
     void testAddIgnoredFile() {
         TestingALM model;
         model.setAccountState(accountState.data());
-        QScopedPointer<QAbstractItemModelTester> modelTester(new QAbstractItemModelTester(&model));
+        QAbstractItemModelTester modelTester(&model);
 
         QCOMPARE(model.rowCount(), 0);
 
@@ -318,7 +318,7 @@ private slots:
     void testRemoveActivityWithRow() {
         TestingALM model;
         model.setAccountState(accountState.data());
-        QScopedPointer<QAbstractItemModelTester> modelTester(new QAbstractItemModelTester(&model));
+        QAbstractItemModelTester modelTester(&model);
 
         QCOMPARE(model.rowCount(), 0);
 
@@ -332,7 +332,7 @@ private slots:
     void testRemoveActivityWithActivity() {
         TestingALM model;
         model.setAccountState(accountState.data());
-        QScopedPointer<QAbstractItemModelTester> modelTester(new QAbstractItemModelTester(&model));
+        QAbstractItemModelTester modelTester(&model);
 
         QVERIFY(model.rowCount() == 0);
 
@@ -347,7 +347,7 @@ private slots:
     void testData() {
         TestingALM model;
         model.setAccountState(accountState.data());
-        QScopedPointer<QAbstractItemModelTester> modelTester(new QAbstractItemModelTester(&model));
+        QAbstractItemModelTester modelTester(&model);
 
         QVERIFY(model.rowCount() == 0);
 
