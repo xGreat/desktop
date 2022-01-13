@@ -36,14 +36,12 @@ InternalLinkWidget::InternalLinkWidget(const QString &localPath,
     const auto folderRelativePath = _localPath.mid(folder->cleanPath().length() + 1);
     const auto serverRelativePath = QDir(folder->remotePath()).filePath(folderRelativePath);
 
-    SyncJournalFileRecord record;
-
     const auto bindLinkSlot = std::bind(&InternalLinkWidget::slotLinkFetched, this, std::placeholders::_1);
 
     fetchPrivateLinkUrl(
         folder->accountState()->account(),
         serverRelativePath,
-        record.numericFileId(),
+        {},
         this,
         bindLinkSlot);
 
@@ -62,10 +60,8 @@ void InternalLinkWidget::slotLinkFetched(const QString &url)
     _ui->internalLinkProgressIndicator->stopAnimation();
 }
 
-void InternalLinkWidget::slotCopyInternalLink(const bool clicked) const
+void InternalLinkWidget::slotCopyInternalLink() const
 {
-    Q_UNUSED(clicked);
-
     QApplication::clipboard()->setText(_internalUrl);
 }
 

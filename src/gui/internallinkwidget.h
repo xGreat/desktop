@@ -38,7 +38,7 @@ public:
 
 private slots:
     void slotLinkFetched(const QString &url);
-    void slotCopyInternalLink(const bool clicked) const;
+    void slotCopyInternalLink() const;
 
 private:
     std::unique_ptr<Ui::InternalLinkWidget> _ui;
